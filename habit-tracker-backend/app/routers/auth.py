@@ -1,16 +1,61 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
 
-from app.schemas.auth import UserLoginRequest, UserRegisterRequest
+from app.core.database import get_db
+from app.schemas.auth import (
+    TokenResponse,
+    UserLoginRequest,
+    UserRegisterRequest,
+    UserResponse
+)
+from app.services.auth_service import login_user, register_user
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-@router.post("/register")
-def register(payload: UserRegisterRequest) -> dict[str, str]:
-    return {"message": f"Register endpoint ready for {payload.email}"}
+@router.post(
+    "/register",
+    response_model=UserResponse,
+    status_code=status.HTTP_201_CREATED
+)
+def register(
+    payload: UserRegisterRequest,
+    db: Session = Depends(get_db)
+) -> UserResponse:
+    user = register_user(
+        db,
+        payload.email,
+        payload.password
+    )
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Email already exists"
+        )
+
+    return user
 
 
-@router.post("/login")
-def login(payload: UserLoginRequest) -> dict[str, str]:
-    return {"message": f"Login endpoint ready for {payload.email}"}
+@router.post(
+    "/login",
+    response_model=TokenResponse
+)
+def login(
+    payload: UserLoginRequest,
+    db: Session = Depends(get_db)
+) -> TokenResponse:
+    tokens = login_user(
+        db,
+        payload.email,
+        payload.password
+    )
+
+    if not tokens:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password"
+        )
+
+    return TokenResponse(**tokens)
