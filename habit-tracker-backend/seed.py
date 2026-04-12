@@ -25,9 +25,9 @@ def hash_password(password: str) -> str:
 
 
 USERS = [
-    {"email": "anna@example.com",    "password": "haslo1234"},
-    {"email": "bartek@example.com",  "password": "haslo1234"},
-    {"email": "celina@example.com",  "password": "haslo1234"},
+    {"email": "anastazja@example.com",  "password": "haslo1234"},
+    {"email": "bartek@example.com",     "password": "haslo1234"},
+    {"email": "czarek@example.com",     "password": "haslo1234"},
 ]
 
 # (nazwa, kolor, ikona, częstotliwość, właściciel_index, % szans na wpis w danym dniu)
