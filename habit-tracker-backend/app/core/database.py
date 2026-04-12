@@ -10,7 +10,7 @@ engine = create_engine(
     settings.DATABASE_URL,
     echo=settings.DEBUG,
     future=True,
-    connect_args={"connect_timeout": 5}
+    connect_args={"connect_timeout": 5},
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
