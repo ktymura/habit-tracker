@@ -25,23 +25,23 @@ def hash_password(password: str) -> str:
 
 
 USERS = [
-    {"email": "anastazja@example.com",  "password": "haslo1234"},
-    {"email": "bartek@example.com",     "password": "haslo1234"},
-    {"email": "czarek@example.com",     "password": "haslo1234"},
+    {"email": "anastazja@example.com", "password": "haslo1234"},
+    {"email": "bartek@example.com", "password": "haslo1234"},
+    {"email": "czarek@example.com", "password": "haslo1234"},
 ]
 
 # (nazwa, kolor, ikona, częstotliwość, właściciel_index, % szans na wpis w danym dniu)
 HABITS = [
-    ("Medytacja",       "#8B5CF6", "🧘", "daily", 0, 0.80),
-    ("Bieganie",        "#10B981", "🏃", "daily", 0, 0.55),
-    ("Czytanie",        "#3B82F6", "📖", "daily", 0, 0.70),
-    ("Picie wody 2L",   "#06B6D4", "💧", "daily", 1, 0.85),
-    ("Bez cukru",       "#F59E0B", "🚫", "daily", 1, 0.45),
-    ("Dziennik",        "#EC4899", "✏️", "daily", 1, 0.65),
-    ("Trening siłowy",  "#EF4444", "💪", "daily", 1, 0.50),
-    ("Witaminy",        "#84CC16", "💊", "daily", 2, 0.90),
-    ("Stretching",      "#F97316", "🤸", "daily", 2, 0.75),
-    ("Sen 8h",          "#6366F1", "😴", "daily", 2, 0.60),
+    ("Medytacja", "#8B5CF6", "🧘", "daily", 0, 0.80),
+    ("Bieganie", "#10B981", "🏃", "daily", 0, 0.55),
+    ("Czytanie", "#3B82F6", "📖", "daily", 0, 0.70),
+    ("Picie wody 2L", "#06B6D4", "💧", "daily", 1, 0.85),
+    ("Bez cukru", "#F59E0B", "🚫", "daily", 1, 0.45),
+    ("Dziennik", "#EC4899", "✏️", "daily", 1, 0.65),
+    ("Trening siłowy", "#EF4444", "💪", "daily", 1, 0.50),
+    ("Witaminy", "#84CC16", "💊", "daily", 2, 0.90),
+    ("Stretching", "#F97316", "🤸", "daily", 2, 0.75),
+    ("Sen 8h", "#6366F1", "😴", "daily", 2, 0.60),
 ]
 
 
@@ -87,7 +87,9 @@ def seed(db: Session) -> None:
                 entry_count += 1
 
     db.commit()
-    print(f"Gotowe! Utworzono: {len(users)} użytkowników, {len(habits)} nawyków, {entry_count} wpisów.")
+    print(
+        f"Gotowe! Utworzono: {len(users)} użytkowników, {len(habits)} nawyków, {entry_count} wpisów."
+    )
 
 
 if __name__ == "__main__":
