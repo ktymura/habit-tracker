@@ -13,10 +13,12 @@
   --color-bg: #f4efe6;
   --color-surface: rgba(255, 252, 247, 0.86);
   --color-surface-strong: #efe3d3;
+  --color-surface-stronger: #e5d2bc;
   --color-border: rgba(122, 91, 61, 0.16);
   --color-text: #24180f;
   --color-text-muted: #6e5746;
   --color-accent: #8e5c34;
+  --color-accent-strong: #76451f;
 }
 
 body {
