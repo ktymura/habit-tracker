@@ -1,4 +1,13 @@
 import { useEffect, useState } from 'react'
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 
 import { Card, Spinner } from '../../components/ui'
 import { getDashboardSummary } from '../../services/dashboard/dashboard-service'
@@ -20,7 +29,7 @@ export function DashboardPage() {
         setErrorMessage(
           error instanceof Error
             ? error.message
-            : 'Nie udalo sie pobrac danych dashboardu.',
+            : 'Unable to load dashboard data.',
         )
       } finally {
         setIsLoading(false)
@@ -31,47 +40,92 @@ export function DashboardPage() {
   }, [])
 
   return (
-    <main className="mx-auto w-full max-w-7xl px-6 py-10">
+    <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
       <div className="space-y-6">
         <header className="space-y-2">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-            /dashboard
+          <p className="text-sm font-medium text-[var(--color-accent-strong)]">
+            Dashboard
           </p>
-          <h2 className="text-3xl font-semibold">Dashboard</h2>
-          <p className="text-sm leading-6 text-[var(--color-text-muted)]">
-            Chroniony widok pod analityke i przyszle wykresy.
+          <h2 className="text-3xl font-semibold tracking-[-0.03em]">
+            Weekly overview
+          </h2>
+          <p className="max-w-2xl text-sm leading-6 text-[var(--color-text-muted)]">
+            A simple activity snapshot for the current sprint foundation.
           </p>
         </header>
 
         {errorMessage ? (
-          <Card className="bg-rose-50 text-rose-700">{errorMessage}</Card>
+          <Card className="border-[var(--color-danger)] bg-[var(--color-danger-soft)] text-[var(--color-danger)]">
+            {errorMessage}
+          </Card>
         ) : null}
 
         {isLoading || !summary ? (
-          <Card className="bg-white">
-            <Spinner label="Ladowanie danych dashboardu..." />
+          <Card>
+            <Spinner label="Loading dashboard..." />
           </Card>
         ) : (
           <>
             <section className="grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
-              <Card className="bg-white">
-                <div className="mb-3 text-sm font-medium text-[var(--color-text-muted)]">
-                  Wykres aktywnosci
+              <Card>
+                <div className="mb-5 flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="font-semibold">Activity</h3>
+                    <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                      Completed habits over the last seven days.
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-[var(--color-accent-soft)] px-2.5 py-1 text-xs font-medium text-[var(--color-accent-strong)]">
+                    7 days
+                  </span>
                 </div>
-                <div className="flex h-48 items-end gap-2">
-                  {summary.activityBars.map((bar) => (
-                    <div
-                      key={bar.id}
-                      className="flex-1 rounded-t-2xl bg-[var(--color-accent)]/70"
-                      style={{ height: `${bar.height}%` }}
-                    />
-                  ))}
+                <div className="h-64">
+                  <ResponsiveContainer height="100%" width="100%">
+                    <BarChart data={summary.activity}>
+                      <CartesianGrid
+                        stroke="var(--color-border)"
+                        strokeDasharray="3 3"
+                        vertical={false}
+                      />
+                      <XAxis
+                        axisLine={false}
+                        dataKey="day"
+                        tickLine={false}
+                        tick={{ fill: 'var(--color-text-muted)', fontSize: 12 }}
+                      />
+                      <YAxis
+                        allowDecimals={false}
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: 'var(--color-text-muted)', fontSize: 12 }}
+                        width={28}
+                      />
+                      <Tooltip
+                        cursor={{ fill: 'var(--color-accent-soft)' }}
+                        contentStyle={{
+                          background: 'var(--color-surface)',
+                          border: '1px solid var(--color-border)',
+                          borderRadius: 10,
+                          color: 'var(--color-text)',
+                        }}
+                      />
+                      <Bar
+                        dataKey="value"
+                        fill="var(--color-accent)"
+                        name="Habits"
+                        radius={[6, 6, 0, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
               </Card>
 
-              <Card className="bg-white">
-                <div className="mb-3 text-sm font-medium text-[var(--color-text-muted)]">
-                  Tydzien
+              <Card>
+                <div className="mb-5">
+                  <h3 className="font-semibold">Week</h3>
+                  <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                    Days with activity.
+                  </p>
                 </div>
                 <div className="grid grid-cols-7 gap-2">
                   {summary.weeklyCells.map((cell) => (
@@ -83,10 +137,10 @@ export function DashboardPage() {
                         {cell.day}
                       </div>
                       <div
-                        className={`mx-auto h-8 w-8 rounded-xl ${
+                        className={`mx-auto h-8 w-8 rounded-lg border ${
                           cell.active
-                            ? 'bg-[var(--color-accent)]/75'
-                            : 'bg-[var(--color-surface-strong)]'
+                            ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)]'
+                            : 'border-[var(--color-border)] bg-[var(--color-surface-muted)]'
                         }`}
                       />
                     </div>
@@ -95,7 +149,7 @@ export function DashboardPage() {
               </Card>
             </section>
 
-            <Card className="bg-white">
+            <Card>
               <p className="text-sm text-[var(--color-text-muted)]">
                 {summary.statsLabel}
               </p>

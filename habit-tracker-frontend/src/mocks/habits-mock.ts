@@ -1,38 +1,26 @@
 import type { CreateHabitPayload, Habit } from '../types/habit'
 import { delay } from './delay'
 
-const palette = {
-  bursztynowy: 'bg-amber-200',
-  niebieski: 'bg-sky-200',
-  zielony: 'bg-emerald-200',
-  rozowy: 'bg-rose-200',
-} as const
-
 let habits: Habit[] = [
   {
+    frequency: 'Daily',
     id: 'habit-1',
-    colorClassName: palette.niebieski,
-    frequency: 'Codziennie',
-    name: 'Picie wody',
+    name: 'Drink water',
+    tone: 'ink',
   },
   {
+    frequency: 'Daily',
     id: 'habit-2',
-    colorClassName: palette.bursztynowy,
-    frequency: 'Codziennie',
-    name: 'Czytanie',
+    name: 'Read',
+    tone: 'clay',
   },
   {
+    frequency: 'Daily',
     id: 'habit-3',
-    colorClassName: palette.zielony,
-    frequency: 'Codziennie',
-    name: 'Spacer',
+    name: 'Walk',
+    tone: 'sage',
   },
 ]
-
-function normalizeColor(color: string) {
-  const key = color.trim().toLowerCase() as keyof typeof palette
-  return palette[key] ?? palette.rozowy
-}
 
 export async function listHabitsMock(): Promise<Habit[]> {
   await delay()
@@ -45,14 +33,14 @@ export async function createHabitMock(
   await delay()
 
   if (!payload.name.trim()) {
-    throw new Error('Nazwa nawyku jest wymagana.')
+    throw new Error('Habit name is required.')
   }
 
   const newHabit: Habit = {
+    frequency: 'Daily',
     id: `habit-${habits.length + 1}`,
-    colorClassName: normalizeColor(payload.color),
-    frequency: 'Codziennie',
     name: payload.name.trim(),
+    tone: payload.tone,
   }
 
   habits = [newHabit, ...habits]

@@ -1,6 +1,6 @@
-export type ActivityBar = {
-  height: number
-  id: string
+export type ActivityPoint = {
+  day: string
+  value: number
 }
 
 export type WeeklyCell = {
@@ -9,7 +9,7 @@ export type WeeklyCell = {
 }
 
 export type DashboardSummary = {
-  activityBars: ActivityBar[]
+  activity: ActivityPoint[]
   statsLabel: string
   weeklyCells: WeeklyCell[]
 }

@@ -23,8 +23,8 @@ export function Modal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/30 px-4 py-8 backdrop-blur-sm">
-      <Card className="w-full max-w-md bg-white">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[oklch(22%_0.018_235_/_0.34)] px-4 py-8">
+      <Card className="w-full max-w-md">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
             <h3 className="text-lg font-semibold text-[var(--color-text)]">
@@ -36,8 +36,13 @@ export function Modal({
               </p>
             ) : null}
           </div>
-          <Button aria-label="Zamknij modal" variant="ghost" onClick={onClose}>
-            Zamknij
+          <Button
+            aria-label="Close"
+            className="min-h-8 px-2 py-1"
+            variant="ghost"
+            onClick={onClose}
+          >
+            Close
           </Button>
         </div>
         <div className="mt-5">{children}</div>

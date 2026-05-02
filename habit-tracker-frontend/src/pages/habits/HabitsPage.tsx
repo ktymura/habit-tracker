@@ -1,14 +1,20 @@
-import { useEffect, useState } from 'react'
+import { type FormEvent, useEffect, useState } from 'react'
 
-import { Button, Card, Input, Modal, Spinner } from '../../components/ui'
+import { Button, Card, Input, Spinner } from '../../components/ui'
 import { createHabit, listHabits } from '../../services/habits/habits-service'
-import type { Habit } from '../../types/habit'
+import type { Habit, HabitTone } from '../../types/habit'
+
+const toneOptions: Array<{ label: string; tone: HabitTone }> = [
+  { label: 'Sage', tone: 'sage' },
+  { label: 'Ink', tone: 'ink' },
+  { label: 'Clay', tone: 'clay' },
+  { label: 'Rose', tone: 'rose' },
+]
 
 export function HabitsPage() {
   const [habits, setHabits] = useState<Habit[]>([])
-  const [isModalOpen, setIsModalOpen] = useState(false)
   const [habitName, setHabitName] = useState('')
-  const [habitColor, setHabitColor] = useState('')
+  const [habitTone, setHabitTone] = useState<HabitTone>('sage')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -22,9 +28,7 @@ export function HabitsPage() {
         setHabits(response)
       } catch (error) {
         setErrorMessage(
-          error instanceof Error
-            ? error.message
-            : 'Nie udalo sie pobrac nawykow.',
+          error instanceof Error ? error.message : 'Unable to load habits.',
         )
       } finally {
         setIsLoading(false)
@@ -34,21 +38,22 @@ export function HabitsPage() {
     void loadHabits()
   }, [])
 
-  async function handleCreateHabit() {
+  async function handleCreateHabit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
     try {
       setIsSaving(true)
       setErrorMessage(null)
       const newHabit = await createHabit({
-        color: habitColor,
         name: habitName,
+        tone: habitTone,
       })
       setHabits((currentHabits) => [newHabit, ...currentHabits])
       setHabitName('')
-      setHabitColor('')
-      setIsModalOpen(false)
+      setHabitTone('sage')
     } catch (error) {
       setErrorMessage(
-        error instanceof Error ? error.message : 'Nie udalo sie dodac nawyku.',
+        error instanceof Error ? error.message : 'Unable to add habit.',
       )
     } finally {
       setIsSaving(false)
@@ -56,77 +61,129 @@ export function HabitsPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-7xl px-6 py-10">
-      <div className="space-y-6">
-        <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="space-y-2">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-              /habits
+    <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <section className="space-y-5">
+          <header className="space-y-2">
+            <p className="text-sm font-medium text-[var(--color-accent-strong)]">
+              Habits
             </p>
-            <h2 className="text-3xl font-semibold">Lista nawykow</h2>
-            <p className="text-sm leading-6 text-[var(--color-text-muted)]">
-              Chroniony widok z miejscem na karty nawykow i modal dodawania.
+            <h2 className="text-3xl font-semibold tracking-[-0.03em]">Today</h2>
+            <p className="max-w-2xl text-sm leading-6 text-[var(--color-text-muted)]">
+              A short list of routines you want to keep visible.
             </p>
-          </div>
-          <Button onClick={() => setIsModalOpen(true)}>Dodaj nawyk</Button>
-        </header>
+          </header>
 
-        {errorMessage ? (
-          <Card className="bg-rose-50 text-rose-700">{errorMessage}</Card>
-        ) : null}
+          {errorMessage ? (
+            <Card className="border-[var(--color-danger)] bg-[var(--color-danger-soft)] text-[var(--color-danger)]">
+              {errorMessage}
+            </Card>
+          ) : null}
 
-        {isLoading ? (
-          <Card className="bg-white">
-            <Spinner label="Ladowanie listy nawykow..." />
-          </Card>
-        ) : habits.length === 0 ? (
-          <Card className="bg-white">
-            <p className="text-sm text-[var(--color-text-muted)]">
-              Nie masz jeszcze zadnych nawykow.
-            </p>
-          </Card>
-        ) : (
-          <section className="grid gap-4 md:grid-cols-3">
-            {habits.map((habit) => (
-              <Card key={habit.id} className="bg-white">
-                <div
-                  className={`mb-3 h-2 rounded-full ${habit.colorClassName}`}
-                  aria-hidden="true"
-                />
-                <div className="font-medium">{habit.name}</div>
-                <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-                  {habit.frequency}
+          <Card className="p-0">
+            {isLoading ? (
+              <div className="p-5">
+                <Spinner label="Loading habits..." />
+              </div>
+            ) : habits.length === 0 ? (
+              <div className="p-5">
+                <p className="text-sm text-[var(--color-text-muted)]">
+                  No habits yet. Add the first one in the form.
                 </p>
-              </Card>
-            ))}
-          </section>
-        )}
-      </div>
+              </div>
+            ) : (
+              <div className="divide-y divide-[var(--color-border)]">
+                {habits.map((habit) => (
+                  <article
+                    key={habit.id}
+                    className="grid gap-3 px-4 py-4 sm:grid-cols-[minmax(0,1fr)_140px_90px] sm:items-center sm:px-5"
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span
+                        className={`habit-tone-${habit.tone} h-2.5 w-2.5 shrink-0 rounded-full bg-[var(--habit-dot)]`}
+                        aria-hidden="true"
+                      />
+                      <h3 className="truncate font-medium">{habit.name}</h3>
+                    </div>
 
-      <Modal
-        title="Nowy nawyk"
-        description="Makieta modala przygotowana pod kolejne issue."
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-      >
-        <div className="space-y-3">
-          <Input
-            label="Nazwa"
-            placeholder="Np. Medytacja"
-            value={habitName}
-            onChange={(event) => setHabitName(event.target.value)}
-          />
-          <Input
-            label="Kolor"
-            placeholder="Np. zielony"
-            value={habitColor}
-            onChange={(event) => setHabitColor(event.target.value)}
-          />
-          <Button fullWidth disabled={isSaving} onClick={handleCreateHabit}>
-            {isSaving ? 'Zapisywanie...' : 'Zapisz'}
-          </Button>
-        </div>
-      </Modal>
+                    <span className="text-sm text-[var(--color-text-muted)]">
+                      {habit.frequency}
+                    </span>
+
+                    <span className="flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
+                      <span
+                        className={`habit-tone-${habit.tone} h-2 w-2 rounded-full bg-[var(--habit-dot)]`}
+                        aria-hidden="true"
+                      />
+                      Active
+                    </span>
+                  </article>
+                ))}
+              </div>
+            )}
+          </Card>
+        </section>
+
+        <aside className="lg:pt-[7.5rem]">
+          <Card>
+            <div className="mb-5 space-y-1">
+              <h3 className="text-lg font-semibold">Add habit</h3>
+              <p className="text-sm text-[var(--color-text-muted)]">
+                Name it, choose a tone, keep the rest simple.
+              </p>
+            </div>
+
+            <form className="space-y-4" onSubmit={handleCreateHabit}>
+              <Input
+                label="Name"
+                placeholder="e.g. Meditation"
+                value={habitName}
+                onChange={(event) => setHabitName(event.target.value)}
+              />
+
+              <fieldset className="space-y-2">
+                <legend className="text-sm font-medium text-[var(--color-text-muted)]">
+                  Color
+                </legend>
+                <div className="grid grid-cols-2 gap-2">
+                  {toneOptions.map((option) => {
+                    const isSelected = option.tone === habitTone
+
+                    return (
+                      <button
+                        key={option.tone}
+                        type="button"
+                        aria-pressed={isSelected}
+                        className={`habit-tone-${option.tone} flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)] ${
+                          isSelected
+                            ? 'border-[var(--habit-border)] bg-[var(--habit-bg)]'
+                            : 'border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-muted)]'
+                        }`}
+                        onClick={() => setHabitTone(option.tone)}
+                      >
+                        <span
+                          className="h-2.5 w-2.5 rounded-full bg-[var(--habit-dot)]"
+                          aria-hidden="true"
+                        />
+                        {option.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </fieldset>
+
+              <Button
+                fullWidth
+                isLoading={isSaving}
+                loadingLabel="Saving..."
+                type="submit"
+              >
+                Save habit
+              </Button>
+            </form>
+          </Card>
+        </aside>
+      </div>
     </main>
   )
 }

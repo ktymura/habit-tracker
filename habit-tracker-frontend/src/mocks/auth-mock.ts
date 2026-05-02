@@ -5,11 +5,11 @@ export async function loginMock(payload: LoginPayload): Promise<AuthResponse> {
   await delay()
 
   if (!payload.email || !payload.password) {
-    throw new Error('Uzupelnij email i haslo.')
+    throw new Error('Enter your email and password.')
   }
 
   if (payload.password.length < 8) {
-    throw new Error('Haslo musi miec minimum 8 znakow.')
+    throw new Error('Password must be at least 8 characters.')
   }
 
   return {
@@ -24,15 +24,15 @@ export async function registerMock(
   await delay()
 
   if (!payload.email || !payload.password || !payload.confirmPassword) {
-    throw new Error('Wypelnij wszystkie pola formularza.')
+    throw new Error('Fill in every field.')
   }
 
   if (payload.password.length < 8) {
-    throw new Error('Haslo musi miec minimum 8 znakow.')
+    throw new Error('Password must be at least 8 characters.')
   }
 
   if (payload.password !== payload.confirmPassword) {
-    throw new Error('Hasla musza byc identyczne.')
+    throw new Error('Passwords must match.')
   }
 
   return {

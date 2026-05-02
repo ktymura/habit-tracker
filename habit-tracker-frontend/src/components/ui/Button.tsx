@@ -8,36 +8,43 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   children: ReactNode
   variant?: ButtonVariant
   fullWidth?: boolean
+  isLoading?: boolean
+  loadingLabel?: string
 }
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    'bg-[var(--color-accent)] text-white shadow-sm shadow-[var(--color-accent)]/20 hover:bg-[var(--color-accent-strong)]',
+    'border-transparent bg-[var(--color-accent)] text-[var(--color-surface)] hover:bg-[var(--color-accent-strong)]',
   secondary:
-    'bg-[var(--color-surface-strong)] text-[var(--color-text)] hover:bg-[var(--color-surface-stronger)]',
-  ghost: 'bg-transparent text-[var(--color-accent)] hover:bg-white/70',
+    'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] hover:border-[var(--color-border-strong)] hover:bg-[var(--color-surface-muted)]',
+  ghost:
+    'border-transparent bg-transparent text-[var(--color-text-muted)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text)]',
 }
 
 export function Button({
   children,
   className,
   fullWidth = false,
+  isLoading = false,
+  loadingLabel = 'Working...',
   type = 'button',
   variant = 'primary',
+  disabled,
   ...props
 }: ButtonProps) {
   return (
     <button
       type={type}
+      disabled={disabled || isLoading}
       className={cn(
-        'inline-flex min-h-11 items-center justify-center rounded-2xl px-4 py-3 text-sm font-medium transition-colors',
+        'inline-flex min-h-10 items-center justify-center rounded-lg border px-3.5 py-2 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-55',
         fullWidth && 'w-full',
         variantClasses[variant],
         className,
       )}
       {...props}
     >
-      {children}
+      {isLoading ? loadingLabel : children}
     </button>
   )
 }

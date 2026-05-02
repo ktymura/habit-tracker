@@ -5,13 +5,13 @@ type SpinnerProps = {
   label?: string
 }
 
-export function Spinner({ className, label = 'Ladowanie' }: SpinnerProps) {
+export function Spinner({ className, label = 'Loading' }: SpinnerProps) {
   return (
     <div
-      className={cn('inline-flex items-center gap-3 text-sm', className)}
+      className={cn('inline-flex items-center gap-2 text-sm', className)}
       role="status"
     >
-      <span className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--color-border)] border-t-[var(--color-accent)]" />
+      <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--color-border)] border-t-[var(--color-accent)]" />
       <span className="text-[var(--color-text-muted)]">{label}</span>
     </div>
   )

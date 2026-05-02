@@ -1,11 +1,13 @@
+export type HabitTone = 'sage' | 'ink' | 'clay' | 'rose'
+
 export type Habit = {
-  id: string
-  colorClassName: string
   frequency: string
+  id: string
   name: string
+  tone: HabitTone
 }
 
 export type CreateHabitPayload = {
-  color: string
   name: string
+  tone: HabitTone
 }
