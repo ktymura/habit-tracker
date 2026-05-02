@@ -1,0 +1,72 @@
+@import 'tailwindcss';
+
+:root {
+  color-scheme: light;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', ui-sans-serif, system-ui,
+    sans-serif;
+  --color-bg: oklch(97.6% 0.006 235);
+  --color-surface: oklch(99% 0.004 235);
+  --color-surface-muted: oklch(94.6% 0.008 235);
+  --color-surface-strong: oklch(91.8% 0.01 235);
+  --color-border: oklch(86% 0.012 235);
+  --color-border-strong: oklch(72% 0.018 235);
+  --color-text: oklch(22% 0.018 235);
+  --color-text-muted: oklch(46% 0.018 235);
+  --color-text-soft: oklch(62% 0.016 235);
+  --color-accent: oklch(48% 0.1 160);
+  --color-accent-strong: oklch(38% 0.095 160);
+  --color-accent-soft: oklch(93% 0.035 160);
+  --color-danger: oklch(51% 0.15 25);
+  --color-danger-soft: oklch(95% 0.028 25);
+  --shadow-panel: 0 1px 2px oklch(22% 0.018 235 / 0.06);
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: var(--color-bg);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+::selection {
+  background: var(--color-accent-soft);
+  color: var(--color-text);
+}
+
+.habit-tone-sage {
+  --habit-bg: oklch(93% 0.035 160);
+  --habit-border: oklch(78% 0.055 160);
+  --habit-dot: oklch(48% 0.1 160);
+}
+
+.habit-tone-ink {
+  --habit-bg: oklch(92% 0.025 250);
+  --habit-border: oklch(76% 0.045 250);
+  --habit-dot: oklch(45% 0.085 250);
+}
+
+.habit-tone-clay {
+  --habit-bg: oklch(93% 0.035 55);
+  --habit-border: oklch(78% 0.06 55);
+  --habit-dot: oklch(54% 0.11 55);
+}
+
+.habit-tone-rose {
+  --habit-bg: oklch(94% 0.035 15);
+  --habit-border: oklch(80% 0.055 15);
+  --habit-dot: oklch(52% 0.11 15);
+}
