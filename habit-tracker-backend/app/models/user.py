@@ -11,11 +11,23 @@ class User(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     email: Mapped[str] = mapped_column(
-        String(255), unique=True, nullable=False, index=True
+        String(255),
+        unique=True,
+        nullable=False,
+        index=True
     )
-    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    password_hash: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False
+    )
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False
     )
 
-    habits = relationship("Habit", back_populates="user", cascade="all, delete-orphan")
+    habits = relationship(
+        "Habit",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
