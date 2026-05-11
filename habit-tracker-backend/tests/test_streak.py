@@ -7,6 +7,7 @@ TODAY = date(2026, 5, 10)
 
 # --- compute_current_streak ---
 
+
 def test_current_streak_empty():
     # Brak wpisów -> streak = 0
     assert compute_current_streak([], TODAY) == 0
@@ -47,6 +48,7 @@ def test_current_streak_ignores_duplicates():
 
 
 # --- compute_longest_streak ---
+
 
 def test_longest_streak_empty():
     # Brak wpisów -> longest = 0

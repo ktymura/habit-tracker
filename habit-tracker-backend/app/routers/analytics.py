@@ -29,11 +29,13 @@ def get_streaks(
             e.entry_date
             for e in db.query(Entry).filter(Entry.habit_id == habit.id).all()
         ]
-        results.append(HabitStreakResponse(
-            habit_id=habit.id,
-            habit_name=habit.name,
-            current_streak=compute_current_streak(entry_dates, today),
-            longest_streak=compute_longest_streak(entry_dates),
-        ))
+        results.append(
+            HabitStreakResponse(
+                habit_id=habit.id,
+                habit_name=habit.name,
+                current_streak=compute_current_streak(entry_dates, today),
+                longest_streak=compute_longest_streak(entry_dates),
+            )
+        )
 
     return StreaksResponse(habits=results)

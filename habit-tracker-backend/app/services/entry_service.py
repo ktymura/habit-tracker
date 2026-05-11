@@ -7,15 +7,8 @@ from app.models.entry import Entry
 from app.models.habit import Habit
 
 
-def create_entry(
-    db: Session,
-    habit: Habit,
-    entry_date: date
-) -> Entry:
-    entry = Entry(
-        habit_id=habit.id,
-        entry_date=entry_date
-    )
+def create_entry(db: Session, habit: Habit, entry_date: date) -> Entry:
+    entry = Entry(habit_id=habit.id, entry_date=entry_date)
 
     db.add(entry)
 
@@ -30,15 +23,12 @@ def create_entry(
     return entry
 
 
-def delete_entry_by_date(
-    db: Session,
-    habit: Habit,
-    entry_date: date
-) -> bool:
-    entry = db.query(Entry).filter(
-        Entry.habit_id == habit.id,
-        Entry.entry_date == entry_date
-    ).first()
+def delete_entry_by_date(db: Session, habit: Habit, entry_date: date) -> bool:
+    entry = (
+        db.query(Entry)
+        .filter(Entry.habit_id == habit.id, Entry.entry_date == entry_date)
+        .first()
+    )
 
     if not entry:
         return False
