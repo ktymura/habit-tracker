@@ -22,7 +22,11 @@ def db():
     finally:
         session.close()
         with engine.connect() as conn:
-            conn.execute(text("DROP VIEW IF EXISTS daily_completion_rate, weekly_completion_rate CASCADE"))
+            conn.execute(
+                text(
+                    "DROP VIEW IF EXISTS daily_completion_rate, weekly_completion_rate CASCADE"
+                )
+            )
             conn.commit()
         Base.metadata.drop_all(bind=engine)
 

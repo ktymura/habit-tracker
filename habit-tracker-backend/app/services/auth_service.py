@@ -4,25 +4,18 @@ from app.core.security import (
     create_access_token,
     create_refresh_token,
     hash_password,
-    verify_password
+    verify_password,
 )
 from app.models.user import User
 
 
-def register_user(
-    db: Session,
-    email: str,
-    password: str
-) -> User | None:
+def register_user(db: Session, email: str, password: str) -> User | None:
     existing_user = db.query(User).filter(User.email == email).first()
 
     if existing_user:
         return None
 
-    user = User(
-        email=email,
-        password_hash=hash_password(password)
-    )
+    user = User(email=email, password_hash=hash_password(password))
 
     db.add(user)
     db.commit()
@@ -31,11 +24,7 @@ def register_user(
     return user
 
 
-def login_user(
-    db: Session,
-    email: str,
-    password: str
-) -> dict | None:
+def login_user(db: Session, email: str, password: str) -> dict | None:
     user = db.query(User).filter(User.email == email).first()
 
     if not user:
@@ -47,5 +36,5 @@ def login_user(
     return {
         "access_token": create_access_token(str(user.id)),
         "refresh_token": create_refresh_token(str(user.id)),
-        "token_type": "bearer"
+        "token_type": "bearer",
     }

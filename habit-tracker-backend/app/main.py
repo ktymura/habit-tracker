@@ -11,10 +11,7 @@ from app.routers.habits import router as habits_router
 from app.routers.health import router as health_router
 
 
-app = FastAPI(
-    title=settings.APP_NAME,
-    version=settings.APP_VERSION
-)
+app = FastAPI(title=settings.APP_NAME, version=settings.APP_VERSION)
 
 Base.metadata.create_all(bind=engine)
 add_exception_handlers(app)
