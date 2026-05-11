@@ -5,6 +5,7 @@ from app.core.database import engine
 from app.core.exceptions import add_exception_handlers
 from app.models import Entry, Habit, User
 from app.models.base import Base
+from app.routers.analytics import router as analytics_router
 from app.routers.auth import router as auth_router
 from app.routers.entries import router as entries_router
 from app.routers.habits import router as habits_router
@@ -23,6 +24,7 @@ app.include_router(health_router)
 app.include_router(auth_router)
 app.include_router(habits_router)
 app.include_router(entries_router)
+app.include_router(analytics_router)
 
 
 @app.get("/")
