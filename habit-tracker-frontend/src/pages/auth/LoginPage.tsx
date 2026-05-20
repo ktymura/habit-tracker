@@ -5,12 +5,18 @@ import { Button, Card, Input } from '../../components/ui'
 import { setAuthToken } from '../../features/auth/auth-storage'
 import { login } from '../../services/auth/auth-service'
 
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 export function LoginPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<{
+    email?: string
+    password?: string
+  }>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const redirectPath = useMemo(() => {
@@ -20,6 +26,22 @@ export function LoginPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+
+    const nextFieldErrors: typeof fieldErrors = {}
+
+    if (!emailPattern.test(email)) {
+      nextFieldErrors.email = 'Enter a valid email address.'
+    }
+
+    if (password.length < 8) {
+      nextFieldErrors.password = 'Password must be at least 8 characters.'
+    }
+
+    setFieldErrors(nextFieldErrors)
+
+    if (Object.keys(nextFieldErrors).length > 0) {
+      return
+    }
 
     try {
       setIsSubmitting(true)
@@ -61,18 +83,32 @@ export function LoginPage() {
 
           <form className="space-y-4" onSubmit={handleSubmit}>
             <Input
+              error={fieldErrors.email}
               label="Email"
               placeholder="twoj@email.com"
               type="email"
               value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              onChange={(event) => {
+                setEmail(event.target.value)
+                setFieldErrors((currentErrors) => ({
+                  ...currentErrors,
+                  email: undefined,
+                }))
+              }}
             />
             <Input
+              error={fieldErrors.password}
               label="Password"
               placeholder="********"
               type="password"
               value={password}
-              onChange={(event) => setPassword(event.target.value)}
+              onChange={(event) => {
+                setPassword(event.target.value)
+                setFieldErrors((currentErrors) => ({
+                  ...currentErrors,
+                  password: undefined,
+                }))
+              }}
             />
             {errorMessage ? (
               <p className="rounded-lg bg-[var(--color-danger-soft)] px-3 py-2 text-sm text-[var(--color-danger)]">
