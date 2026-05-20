@@ -3,20 +3,26 @@ import { delay } from './delay'
 
 let habits: Habit[] = [
   {
-    frequency: 'Daily',
+    completedToday: true,
+    frequency: 'daily',
     id: 'habit-1',
+    icon: 'W',
     name: 'Drink water',
     tone: 'ink',
   },
   {
-    frequency: 'Daily',
+    completedToday: false,
+    frequency: 'daily',
     id: 'habit-2',
+    icon: 'R',
     name: 'Read',
     tone: 'clay',
   },
   {
-    frequency: 'Daily',
+    completedToday: false,
+    frequency: 'weekdays',
     id: 'habit-3',
+    icon: 'S',
     name: 'Walk',
     tone: 'sage',
   },
@@ -37,12 +43,35 @@ export async function createHabitMock(
   }
 
   const newHabit: Habit = {
-    frequency: 'Daily',
+    completedToday: false,
+    frequency: payload.frequency,
     id: `habit-${habits.length + 1}`,
+    icon: payload.icon,
     name: payload.name.trim(),
     tone: payload.tone,
   }
 
   habits = [newHabit, ...habits]
   return newHabit
+}
+
+export async function toggleHabitTodayMock(
+  habitId: string,
+  completed: boolean,
+): Promise<Habit> {
+  await delay(250)
+
+  const habit = habits.find((currentHabit) => currentHabit.id === habitId)
+
+  if (!habit) {
+    throw new Error('Habit was not found.')
+  }
+
+  habits = habits.map((currentHabit) =>
+    currentHabit.id === habitId
+      ? { ...currentHabit, completedToday: completed }
+      : currentHabit,
+  )
+
+  return { ...habit, completedToday: completed }
 }
