@@ -83,6 +83,14 @@ export async function register(
       email: payload.email,
       password: payload.password,
     })
+
+    if (!response.data.access_token && !response.data.token) {
+      return login({
+        email: payload.email,
+        password: payload.password,
+      })
+    }
+
     return normalizeAuthResponse(response.data, payload.email)
   } catch (error) {
     throw new Error(getErrorMessage(error, 'Unable to create account.'), {
