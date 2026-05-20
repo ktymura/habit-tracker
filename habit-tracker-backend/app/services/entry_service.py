@@ -56,7 +56,9 @@ def get_entries_for_habit(
     date_from: date | None,
     date_to: date | None
 ) -> list[Entry]:
-    query = db.query(Entry).filter(Entry.habit_id == habit.id)
+    query = db.query(Entry).filter(
+        Entry.habit_id == habit.id
+    )
 
     if date_from is not None:
         query = query.filter(Entry.entry_date >= date_from)

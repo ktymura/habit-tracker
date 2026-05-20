@@ -1,6 +1,6 @@
 from datetime import time
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class NotificationSettingsRequest(BaseModel):
@@ -9,6 +9,8 @@ class NotificationSettingsRequest(BaseModel):
 
 
 class NotificationSettingsResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     user_id: int
     enabled: bool

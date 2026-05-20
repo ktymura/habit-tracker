@@ -16,8 +16,15 @@ class NotificationSetting(Base):
         nullable=False,
         index=True
     )
-    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    reminder_time: Mapped[time | None] = mapped_column(Time, nullable=True)
+    enabled: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False
+    )
+    reminder_time: Mapped[time | None] = mapped_column(
+        Time,
+        nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -30,4 +37,7 @@ class NotificationSetting(Base):
         nullable=False
     )
 
-    user = relationship("User", back_populates="notification_setting")
+    user = relationship(
+        "User",
+        back_populates="notification_setting"
+    )

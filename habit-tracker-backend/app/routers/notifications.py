@@ -14,7 +14,10 @@ from app.services.notification_service import upsert_notification_settings
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
 
-@router.post("/settings", response_model=NotificationSettingsResponse)
+@router.post(
+    "/settings",
+    response_model=NotificationSettingsResponse
+)
 def save_notification_settings(
     payload: NotificationSettingsRequest,
     current_user: User = Depends(get_current_user),
@@ -27,9 +30,4 @@ def save_notification_settings(
         payload.reminder_time
     )
 
-    return NotificationSettingsResponse(
-        id=setting.id,
-        user_id=setting.user_id,
-        enabled=setting.enabled,
-        reminder_time=setting.reminder_time
-    )
+    return setting

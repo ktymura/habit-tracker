@@ -3,8 +3,11 @@ from datetime import date
 from pydantic import BaseModel
 
 
-class PredictionResponse(BaseModel):
-    probability: float
+class StreakItem(BaseModel):
+    habit_id: int
+    habit_name: str
+    current_streak: int
+    longest_streak: int
 
 
 class AnalyticsSummaryItem(BaseModel):
@@ -17,3 +20,15 @@ class AnalyticsSummaryItem(BaseModel):
 class DailyCountItem(BaseModel):
     date: date
     count: int
+
+
+class CorrelationItem(BaseModel):
+    habit_a_id: int
+    habit_a_name: str
+    habit_b_id: int
+    habit_b_name: str
+    correlation: float
+
+
+class PredictionResponse(BaseModel):
+    probability: float
