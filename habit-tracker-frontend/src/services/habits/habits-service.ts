@@ -2,8 +2,13 @@ import {
   createHabitMock,
   listHabitsMock,
   toggleHabitTodayMock,
+  updateHabitMock,
 } from '../../mocks/habits-mock'
-import type { CreateHabitPayload, Habit } from '../../types/habit'
+import type {
+  CreateHabitPayload,
+  Habit,
+  UpdateHabitPayload,
+} from '../../types/habit'
 import { apiClient } from '../api/client'
 
 const shouldUseMocks = import.meta.env.VITE_USE_MOCKS !== 'false'
@@ -54,6 +59,23 @@ export async function createHabit(payload: CreateHabitPayload): Promise<Habit> {
   }
 
   const response = await apiClient.post<ApiHabit>('/habits', {
+    color: payload.tone,
+    frequency: payload.frequency,
+    icon: payload.icon,
+    name: payload.name,
+  })
+  return normalizeHabit(response.data)
+}
+
+export async function updateHabit(
+  habitId: string,
+  payload: UpdateHabitPayload,
+): Promise<Habit> {
+  if (shouldUseMocks) {
+    return updateHabitMock(habitId, payload)
+  }
+
+  const response = await apiClient.put<ApiHabit>(`/habits/${habitId}`, {
     color: payload.tone,
     frequency: payload.frequency,
     icon: payload.icon,

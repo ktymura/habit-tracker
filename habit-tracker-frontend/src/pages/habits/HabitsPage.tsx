@@ -1,10 +1,11 @@
 import { type FormEvent, useEffect, useState } from 'react'
 
-import { Button, Card, Input, Modal } from '../../components/ui'
+import { Button, Card, Input, Modal, Toast } from '../../components/ui'
 import {
   createHabit,
   listHabits,
   toggleHabitToday,
+  updateHabit,
 } from '../../services/habits/habits-service'
 import type { Habit, HabitFrequency, HabitTone } from '../../types/habit'
 
@@ -45,6 +46,7 @@ function HabitSkeletonList() {
 
 export function HabitsPage() {
   const [habits, setHabits] = useState<Habit[]>([])
+  const [editingHabit, setEditingHabit] = useState<Habit | null>(null)
   const [habitName, setHabitName] = useState('')
   const [habitTone, setHabitTone] = useState<HabitTone>('sage')
   const [habitFrequency, setHabitFrequency] =
@@ -56,6 +58,10 @@ export function HabitsPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [pendingHabitIds, setPendingHabitIds] = useState<string[]>([])
+  const [toast, setToast] = useState<{
+    message: string
+    tone?: 'danger' | 'success'
+  } | null>(null)
 
   useEffect(() => {
     async function loadHabits() {
@@ -76,6 +82,40 @@ export function HabitsPage() {
     void loadHabits()
   }, [])
 
+  useEffect(() => {
+    if (!toast) {
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => setToast(null), 2600)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [toast])
+
+  function resetHabitForm() {
+    setEditingHabit(null)
+    setHabitName('')
+    setHabitTone('sage')
+    setHabitFrequency('daily')
+    setHabitIcon('W')
+    setFormError(null)
+  }
+
+  function openCreateModal() {
+    resetHabitForm()
+    setIsModalOpen(true)
+  }
+
+  function openEditModal(habit: Habit) {
+    setEditingHabit(habit)
+    setHabitName(habit.name)
+    setHabitTone(habit.tone)
+    setHabitFrequency(habit.frequency)
+    setHabitIcon(habit.icon)
+    setFormError(null)
+    setIsModalOpen(true)
+  }
+
   async function handleCreateHabit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
@@ -87,17 +127,28 @@ export function HabitsPage() {
     try {
       setIsSaving(true)
       setFormError(null)
-      const newHabit = await createHabit({
+      const payload = {
         frequency: habitFrequency,
         icon: habitIcon,
         name: habitName,
         tone: habitTone,
-      })
-      setHabits((currentHabits) => [newHabit, ...currentHabits])
-      setHabitName('')
-      setHabitTone('sage')
-      setHabitFrequency('daily')
-      setHabitIcon('W')
+      }
+
+      if (editingHabit) {
+        const updatedHabit = await updateHabit(editingHabit.id, payload)
+        setHabits((currentHabits) =>
+          currentHabits.map((currentHabit) =>
+            currentHabit.id === updatedHabit.id ? updatedHabit : currentHabit,
+          ),
+        )
+        setToast({ message: 'Habit updated.' })
+      } else {
+        const newHabit = await createHabit(payload)
+        setHabits((currentHabits) => [newHabit, ...currentHabits])
+        setToast({ message: 'Habit added.' })
+      }
+
+      resetHabitForm()
       setIsModalOpen(false)
     } catch (error) {
       setFormError(
@@ -123,8 +174,20 @@ export function HabitsPage() {
 
     try {
       await toggleHabitToday(habit.id, nextCompletedState)
+      setToast({
+        message: nextCompletedState
+          ? `${habit.name} marked done.`
+          : `${habit.name} reopened for today.`,
+      })
     } catch (error) {
       setHabits(previousHabits)
+      setToast({
+        message:
+          error instanceof Error
+            ? error.message
+            : 'Unable to update habit completion.',
+        tone: 'danger',
+      })
       setErrorMessage(
         error instanceof Error
           ? error.message
@@ -154,7 +217,7 @@ export function HabitsPage() {
                 belongs here.
               </p>
             </div>
-            <Button onClick={() => setIsModalOpen(true)}>Add habit</Button>
+            <Button onClick={openCreateModal}>Add habit</Button>
           </header>
 
           {errorMessage ? (
@@ -171,7 +234,7 @@ export function HabitsPage() {
                 <p className="text-sm leading-6 text-[var(--color-text-muted)]">
                   No habits yet. Add the first routine to start tracking today.
                 </p>
-                <Button variant="secondary" onClick={() => setIsModalOpen(true)}>
+                <Button variant="secondary" onClick={openCreateModal}>
                   Add first habit
                 </Button>
               </div>
@@ -180,7 +243,7 @@ export function HabitsPage() {
                 {habits.map((habit) => (
                   <article
                     key={habit.id}
-                    className="grid gap-3 px-4 py-4 sm:grid-cols-[minmax(0,1fr)_130px_120px] sm:items-center sm:px-5"
+                    className="grid gap-3 px-4 py-4 transition-colors hover:bg-[var(--color-surface-muted)] sm:grid-cols-[minmax(0,1fr)_120px_120px_82px] sm:items-center sm:px-5"
                   >
                     <div className="flex min-w-0 items-center gap-3">
                       <span
@@ -206,6 +269,14 @@ export function HabitsPage() {
                       />
                       Done today
                     </label>
+
+                    <Button
+                      className="min-h-9 px-3 py-1"
+                      variant="ghost"
+                      onClick={() => openEditModal(habit)}
+                    >
+                      Edit
+                    </Button>
                   </article>
                 ))}
               </div>
@@ -217,8 +288,11 @@ export function HabitsPage() {
       <Modal
         description="Name it, choose an icon, color, and frequency."
         isOpen={isModalOpen}
-        title="Add habit"
-        onClose={() => setIsModalOpen(false)}
+        title={editingHabit ? 'Edit habit' : 'Add habit'}
+        onClose={() => {
+          resetHabitForm()
+          setIsModalOpen(false)
+        }}
       >
         <form className="space-y-4" onSubmit={handleCreateHabit}>
           <Input
@@ -319,6 +393,8 @@ export function HabitsPage() {
           </Button>
         </form>
       </Modal>
+
+      {toast ? <Toast message={toast.message} tone={toast.tone} /> : null}
     </main>
   )
 }

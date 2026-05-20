@@ -1,4 +1,4 @@
-import type { CreateHabitPayload, Habit } from '../types/habit'
+import type { CreateHabitPayload, Habit, UpdateHabitPayload } from '../types/habit'
 import { delay } from './delay'
 
 let habits: Habit[] = [
@@ -53,6 +53,37 @@ export async function createHabitMock(
 
   habits = [newHabit, ...habits]
   return newHabit
+}
+
+export async function updateHabitMock(
+  habitId: string,
+  payload: UpdateHabitPayload,
+): Promise<Habit> {
+  await delay()
+
+  if (!payload.name.trim()) {
+    throw new Error('Habit name is required.')
+  }
+
+  const habit = habits.find((currentHabit) => currentHabit.id === habitId)
+
+  if (!habit) {
+    throw new Error('Habit was not found.')
+  }
+
+  const updatedHabit: Habit = {
+    ...habit,
+    frequency: payload.frequency,
+    icon: payload.icon,
+    name: payload.name.trim(),
+    tone: payload.tone,
+  }
+
+  habits = habits.map((currentHabit) =>
+    currentHabit.id === habitId ? updatedHabit : currentHabit,
+  )
+
+  return updatedHabit
 }
 
 export async function toggleHabitTodayMock(
