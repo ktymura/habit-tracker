@@ -18,3 +18,5 @@ export type CreateHabitPayload = {
   name: string
   tone: HabitTone
 }
+
+export type UpdateHabitPayload = CreateHabitPayload
