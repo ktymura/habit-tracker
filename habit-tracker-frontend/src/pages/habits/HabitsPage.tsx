@@ -289,7 +289,7 @@ export function HabitsPage() {
                 {habits.map((habit) => (
                   <article
                     key={habit.id}
-                    className="grid grid-cols-[minmax(0,1fr)_96px] gap-3 px-4 py-4 transition-colors hover:bg-[var(--color-surface-muted)] sm:grid-cols-[minmax(0,1fr)_120px_120px_82px] sm:items-center sm:px-5"
+                    className="grid grid-cols-[minmax(0,1fr)_96px] gap-3 px-4 py-4 transition-colors hover:bg-[var(--color-surface-muted)] sm:grid-cols-[minmax(0,1fr)_120px_132px_96px] sm:items-center sm:gap-x-3 sm:px-5"
                   >
                     <div className="flex min-w-0 items-center gap-3">
                       <span
@@ -310,10 +310,6 @@ export function HabitsPage() {
                         habit.completedToday
                           ? 'border-[var(--color-accent)] bg-[var(--color-accent)] text-[var(--color-surface)]'
                           : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:border-[var(--color-border-strong)] hover:bg-[var(--color-surface-muted)]'
-                      } ${
-                        pendingHabitIds.includes(habit.id)
-                          ? 'cursor-wait opacity-70'
-                          : ''
                       }`}
                     >
                       <input
@@ -386,14 +382,14 @@ export function HabitsPage() {
                   key={icon}
                   type="button"
                   aria-pressed={icon === habitIcon}
-                  className={`flex aspect-square min-h-11 cursor-pointer items-center justify-center rounded-lg border text-lg font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)] ${
+                  className={`flex aspect-square min-h-14 cursor-pointer items-center justify-center rounded-lg border text-4xl leading-none font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)] ${
                     icon === habitIcon
                       ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-[var(--color-accent-strong)]'
                       : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-muted)]'
                   }`}
                   onClick={() => setHabitIcon(icon)}
                 >
-                  {icon}
+                  <span className="text-4xl leading-none">{icon}</span>
                 </button>
               ))}
             </div>
