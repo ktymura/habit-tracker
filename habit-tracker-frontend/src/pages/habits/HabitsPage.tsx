@@ -22,7 +22,20 @@ const frequencyOptions: Array<{ label: string; value: HabitFrequency }> = [
   { label: 'Weekly', value: 'weekly' },
 ]
 
-const iconOptions = ['W', 'R', 'S', 'M', 'F', 'B']
+const iconOptions = [
+  '🧘',
+  '🏃',
+  '📖',
+  '💧',
+  '💪',
+  '💊',
+  '☕',
+  '📝',
+  '🌱',
+  '🎯',
+  '🛌',
+  '🍎',
+]
 
 function HabitSkeletonList() {
   return (
@@ -49,8 +62,7 @@ export function HabitsPage() {
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null)
   const [habitName, setHabitName] = useState('')
   const [habitTone, setHabitTone] = useState<HabitTone>('sage')
-  const [habitFrequency, setHabitFrequency] =
-    useState<HabitFrequency>('daily')
+  const [habitFrequency, setHabitFrequency] = useState<HabitFrequency>('daily')
   const [habitIcon, setHabitIcon] = useState('W')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
@@ -259,20 +271,44 @@ export function HabitsPage() {
                       {habit.frequency}
                     </span>
 
-                    <label className="flex w-fit items-center gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text-muted)]">
+                    <label
+                      className={`inline-flex h-10 w-30S cursor-pointer items-center justify-center gap-2 rounded-lg border px-3 text-sm font-medium leading-none transition-colors ${
+                        habit.completedToday
+                          ? 'border-[var(--color-accent)] bg-[var(--color-accent)] text-[var(--color-surface)]'
+                          : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:border-[var(--color-border-strong)] hover:bg-[var(--color-surface-muted)]'
+                      } ${
+                        pendingHabitIds.includes(habit.id)
+                          ? 'cursor-wait opacity-70'
+                          : ''
+                      }`}
+                    >
                       <input
                         checked={habit.completedToday}
-                        className="h-4 w-4 accent-[var(--color-accent)]"
+                        className="sr-only"
                         disabled={pendingHabitIds.includes(habit.id)}
                         type="checkbox"
                         onChange={() => void handleToggleHabit(habit)}
                       />
-                      Done today
+
+                      <span
+                        aria-hidden="true"
+                        className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-[10px] leading-none ${
+                          habit.completedToday
+                            ? 'border-[var(--color-surface)] bg-[var(--color-surface)] text-[var(--color-accent)]'
+                            : 'border-[var(--color-border-strong)] bg-transparent'
+                        }`}
+                      >
+                        {habit.completedToday ? '✓' : ''}
+                      </span>
+
+                      <span className="leading-none">
+                        {habit.completedToday ? 'Done' : 'Mark done'}
+                      </span>
                     </label>
 
                     <Button
-                      className="min-h-9 px-3 py-1"
-                      variant="ghost"
+                      className="h-10 w-24 px-3 text-sm font-medium leading-none"
+                      variant="secondary"
                       onClick={() => openEditModal(habit)}
                     >
                       Edit
@@ -310,13 +346,13 @@ export function HabitsPage() {
             <legend className="text-sm font-medium text-[var(--color-text-muted)]">
               Icon
             </legend>
-            <div className="grid grid-cols-6 gap-2">
+            <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
               {iconOptions.map((icon) => (
                 <button
                   key={icon}
                   type="button"
                   aria-pressed={icon === habitIcon}
-                  className={`rounded-lg border py-2 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)] ${
+                  className={`flex aspect-square min-h-11 cursor-pointer items-center justify-center rounded-lg border text-lg font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)] ${
                     icon === habitIcon
                       ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-[var(--color-accent-strong)]'
                       : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-muted)]'
@@ -342,7 +378,7 @@ export function HabitsPage() {
                     key={option.tone}
                     type="button"
                     aria-pressed={isSelected}
-                    className={`habit-tone-${option.tone} flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)] ${
+                    className={`habit-tone-${option.tone} flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)] ${
                       isSelected
                         ? 'border-[var(--habit-border)] bg-[var(--habit-bg)]'
                         : 'border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-muted)]'
@@ -370,7 +406,7 @@ export function HabitsPage() {
                   key={option.value}
                   type="button"
                   aria-pressed={option.value === habitFrequency}
-                  className={`rounded-lg border px-3 py-2 text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)] ${
+                  className={`cursor-pointer rounded-lg border px-3 py-2 text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)] ${
                     option.value === habitFrequency
                       ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-[var(--color-accent-strong)]'
                       : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-muted)]'

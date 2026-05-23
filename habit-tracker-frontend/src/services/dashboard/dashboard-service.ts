@@ -214,13 +214,6 @@ export async function getDashboardAnalytics(
 
   return {
     completionSeries,
-    dataSources: [
-      { label: 'Habits', source: 'backend' },
-      { label: 'Streaks', source: 'backend' },
-      { label: 'Completion summary', source: 'backend' },
-      { label: 'Heatmap', source: 'backend' },
-      { label: 'Weekly entries', source: 'backend' },
-    ],
     habits: normalizedHabits,
     heatmap,
     stats: {

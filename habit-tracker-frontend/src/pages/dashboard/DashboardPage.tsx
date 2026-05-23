@@ -9,7 +9,7 @@ import {
   YAxis,
 } from 'recharts'
 
-import { Button, Card, Spinner } from '../../components/ui'
+import { Card, Spinner } from '../../components/ui'
 import { getDashboardAnalytics } from '../../services/dashboard/dashboard-service'
 import type {
   DashboardAnalytics,
@@ -50,6 +50,7 @@ function DashboardSkeleton() {
       <Card>
         <Spinner label="Loading dashboard..." />
       </Card>
+
       <Card>
         <div className="space-y-3">
           {[0, 1, 2, 3].map((item) => (
@@ -76,6 +77,7 @@ export function DashboardPage() {
       try {
         setIsLoading(true)
         setErrorMessage(null)
+
         const response = await getDashboardAnalytics(range, selectedHabitId)
         setAnalytics(response)
 
@@ -126,44 +128,69 @@ export function DashboardPage() {
             <p className="text-sm font-medium text-[var(--color-accent-strong)]">
               Dashboard
             </p>
+
             <h2 className="text-3xl font-semibold tracking-[-0.03em]">
               Analytics
             </h2>
+
             <p className="max-w-2xl text-sm leading-6 text-[var(--color-text-muted)]">
               Completion trends, activity heatmap, and the weekly habit grid.
             </p>
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="flex rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-1">
+          <div className="flex flex-col gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-2 shadow-[var(--shadow-panel)] sm:flex-row sm:items-center">
+            <div className="inline-grid h-11 grid-cols-2 gap-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-1">
               {ranges.map((option) => (
-                <Button
+                <button
                   key={option.value}
-                  className="min-h-8 px-3 py-1"
-                  variant={option.value === range ? 'primary' : 'ghost'}
+                  type="button"
+                  className={`inline-flex h-full min-w-[78px] items-center justify-center rounded-md px-4 pt-px text-sm font-medium leading-none transition-colors ${
+                    option.value === range
+                      ? 'bg-[var(--color-accent)] text-[var(--color-surface)]'
+                      : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text)]'
+                  }`}
                   onClick={() => setRange(option.value)}
                 >
                   {option.label}
-                </Button>
+                </button>
               ))}
             </div>
 
             <label className="sr-only" htmlFor="habit-filter">
               Habit
             </label>
-            <select
-              id="habit-filter"
-              className="min-h-10 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-soft)]"
-              value={selectedHabitId}
-              onChange={(event) => setSelectedHabitId(event.target.value)}
-            >
-              <option value="all">All habits</option>
-              {analytics?.habits.map((habit) => (
-                <option key={habit.id} value={habit.id}>
-                  {habit.name}
-                </option>
-              ))}
-            </select>
+
+            <div className="relative w-full sm:w-auto">
+              <select
+                id="habit-filter"
+                className="h-11 w-full cursor-pointer appearance-none rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] pl-3 pr-12 text-sm font-medium leading-none text-[var(--color-text)] outline-none transition-colors hover:border-[var(--color-border-strong)] hover:bg-[var(--color-surface-muted)] focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-soft)] sm:min-w-44"
+                value={selectedHabitId}
+                onChange={(event) => setSelectedHabitId(event.target.value)}
+              >
+                <option value="all">All habits</option>
+
+                {analytics?.habits.map((habit) => (
+                  <option key={habit.id} value={habit.id}>
+                    {habit.name}
+                  </option>
+                ))}
+              </select>
+
+              <svg
+                aria-hidden="true"
+                className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-muted)]"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="m6 9 6 6 6-6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
           </div>
         </header>
 
@@ -192,6 +219,7 @@ export function DashboardPage() {
                   {analytics.stats.activeHabits}
                 </strong>
               </Card>
+
               <Card>
                 <p className="text-sm text-[var(--color-text-muted)]">
                   Average completion
@@ -200,6 +228,7 @@ export function DashboardPage() {
                   {Math.round(analytics.stats.averageCompletionRate)}%
                 </strong>
               </Card>
+
               <Card>
                 <p className="text-sm text-[var(--color-text-muted)]">
                   Best streak
@@ -208,6 +237,7 @@ export function DashboardPage() {
                   {analytics.stats.bestStreak} days
                 </strong>
               </Card>
+
               <Card>
                 <p className="text-sm text-[var(--color-text-muted)]">
                   Heatmap total
@@ -218,7 +248,7 @@ export function DashboardPage() {
               </Card>
             </section>
 
-            <section className="grid gap-4 lg:grid-cols-[1.35fr_0.65fr]">
+            <section>
               <Card>
                 <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                   <div>
@@ -227,10 +257,12 @@ export function DashboardPage() {
                       {selectedHabitName} across the selected range.
                     </p>
                   </div>
-                  <span className="w-fit rounded-full bg-[var(--color-accent-soft)] px-2.5 py-1 text-xs font-medium text-[var(--color-accent-strong)]">
+
+                  <span className="inline-flex h-7 w-fit items-center rounded-full bg-[var(--color-accent-soft)] px-2.5 text-xs font-medium leading-none text-[var(--color-accent-strong)]">
                     {range === '7d' ? '7 days' : '30 days'}
                   </span>
                 </div>
+
                 <div className="h-72">
                   <ResponsiveContainer height="100%" width="100%">
                     <LineChart data={analytics.completionSeries}>
@@ -239,20 +271,29 @@ export function DashboardPage() {
                         strokeDasharray="3 3"
                         vertical={false}
                       />
+
                       <XAxis
                         axisLine={false}
                         dataKey="label"
                         tickLine={false}
-                        tick={{ fill: 'var(--color-text-muted)', fontSize: 12 }}
+                        tick={{
+                          fill: 'var(--color-text-muted)',
+                          fontSize: 12,
+                        }}
                       />
+
                       <YAxis
                         axisLine={false}
                         domain={[0, 100]}
                         tickFormatter={(value) => `${value}%`}
                         tickLine={false}
-                        tick={{ fill: 'var(--color-text-muted)', fontSize: 12 }}
+                        tick={{
+                          fill: 'var(--color-text-muted)',
+                          fontSize: 12,
+                        }}
                         width={42}
                       />
+
                       <Tooltip
                         formatter={(value) => [`${value}%`, 'Completion']}
                         labelFormatter={(_, payload) =>
@@ -265,6 +306,7 @@ export function DashboardPage() {
                           color: 'var(--color-text)',
                         }}
                       />
+
                       <Line
                         activeDot={{ r: 5 }}
                         dataKey="value"
@@ -278,34 +320,6 @@ export function DashboardPage() {
                   </ResponsiveContainer>
                 </div>
               </Card>
-
-              <Card>
-                <div className="mb-5">
-                  <h3 className="font-semibold">Data source</h3>
-                  <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-                    Backend status for this dashboard.
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  {analytics.dataSources.map((item) => (
-                    <div
-                      key={item.label}
-                      className="flex items-center justify-between gap-3 rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm"
-                    >
-                      <span>{item.label}</span>
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                          item.source === 'backend'
-                            ? 'bg-[var(--color-accent-soft)] text-[var(--color-accent-strong)]'
-                            : 'bg-[var(--color-surface-muted)] text-[var(--color-text-muted)]'
-                        }`}
-                      >
-                        {item.source}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </Card>
             </section>
 
             <Card>
@@ -315,6 +329,7 @@ export function DashboardPage() {
                   365 days of activity.
                 </p>
               </div>
+
               <div className="overflow-x-auto pb-2">
                 <div className="grid w-max grid-flow-col grid-rows-7 gap-1">
                   {analytics.heatmap.map((day) => (
@@ -338,21 +353,25 @@ export function DashboardPage() {
                   Habit completion by day with current streaks.
                 </p>
               </div>
+
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[680px] border-collapse text-sm">
                   <thead>
                     <tr className="border-b border-[var(--color-border)] text-left text-[var(--color-text-muted)]">
                       <th className="px-5 py-3 font-medium">Habit</th>
+
                       {analytics.weeklyHabits[0]?.days.map((day) => (
                         <th key={day.day} className="px-3 py-3 font-medium">
                           {day.day}
                         </th>
                       ))}
+
                       <th className="px-5 py-3 text-right font-medium">
                         Streak
                       </th>
                     </tr>
                   </thead>
+
                   <tbody>
                     {analytics.weeklyHabits.map((habit) => (
                       <tr
@@ -362,6 +381,7 @@ export function DashboardPage() {
                         <td className="px-5 py-3 font-medium">
                           {habit.habitName}
                         </td>
+
                         {habit.days.map((day) => (
                           <td key={day.date} className="px-3 py-3">
                             <input
@@ -373,8 +393,9 @@ export function DashboardPage() {
                             />
                           </td>
                         ))}
+
                         <td className="px-5 py-3 text-right">
-                          <span className="rounded-full bg-[var(--color-accent-soft)] px-2.5 py-1 text-xs font-medium text-[var(--color-accent-strong)]">
+                          <span className="inline-flex h-7 items-center rounded-full bg-[var(--color-accent-soft)] px-2.5 text-xs font-medium leading-none text-[var(--color-accent-strong)]">
                             {habit.streak} days
                           </span>
                         </td>

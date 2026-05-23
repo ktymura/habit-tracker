@@ -36,14 +36,8 @@ export type DashboardStats = {
   totalCompletions: number
 }
 
-export type DashboardDataSource = {
-  label: string
-  source: 'backend'
-}
-
 export type DashboardAnalytics = {
   completionSeries: CompletionPoint[]
-  dataSources: DashboardDataSource[]
   habits: DashboardHabit[]
   heatmap: HeatmapDay[]
   stats: DashboardStats
