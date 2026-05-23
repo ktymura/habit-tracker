@@ -59,16 +59,16 @@ def create_entry_endpoint(
         )
 
     try:
-        return create_entry(db, habit, payload.entry_date)
-        db.execute(text("REFRESH MATERIALIZED VIEW CONCURRENTLY user_heatmap_mv"))
-        db.commit()
-        analytics_cache.invalidate_prefix(f"analytics:user:{current_user.id}:")
-
+        entry = create_entry(db, habit, payload.entry_date)
     except IntegrityError:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Entry for this day already exists",
         )
+
+    db.execute(text("REFRESH MATERIALIZED VIEW CONCURRENTLY user_heatmap_mv"))
+    db.commit()
+    return entry
 
 
 @router.delete("/{habit_id}/entries", status_code=status.HTTP_204_NO_CONTENT)
