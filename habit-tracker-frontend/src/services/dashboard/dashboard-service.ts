@@ -1,4 +1,3 @@
-import { getDashboardAnalyticsMock } from '../../mocks/dashboard-mock'
 import type {
   CompletionPoint,
   DashboardAnalytics,
@@ -11,8 +10,6 @@ import type { Habit } from '../../types/habit'
 import { apiClient } from '../api/client'
 import { listHabits } from '../habits/habits-service'
 
-const shouldUseMocks = import.meta.env.VITE_USE_MOCKS !== 'false'
-
 type ApiStreak = {
   current_streak: number
   habit_id: number
@@ -22,6 +19,22 @@ type ApiStreak = {
 
 type ApiStreaksResponse = {
   habits: ApiStreak[]
+}
+
+type ApiHeatmapDay = {
+  count: number
+  date: string
+}
+
+type ApiDailyCompletion = {
+  completion_rate: number
+  date: string
+}
+
+type ApiEntry = {
+  entry_date: string
+  habit_id: number
+  id: number
 }
 
 function toDateKey(date: Date) {
@@ -41,84 +54,140 @@ function normalizeHabits(habits: Habit[]): DashboardHabit[] {
   }))
 }
 
-function buildMockCompletionSeries(
+function getRangeDays(range: DashboardRange) {
+  return range === '7d' ? 7 : 30
+}
+
+function getRangeStart(range: DashboardRange) {
+  return toDateKey(addDays(new Date(), 1 - getRangeDays(range)))
+}
+
+function getRangeEnd() {
+  return toDateKey(new Date())
+}
+
+function formatPointLabel(dateKey: string, range: DashboardRange) {
+  const date = new Date(`${dateKey}T00:00:00`)
+
+  return range === '7d'
+    ? date.toLocaleDateString('en-US', { weekday: 'short' })
+    : date.toLocaleDateString('en-US', { day: '2-digit', month: 'short' })
+}
+
+function normalizeCompletionSeries(
+  points: ApiDailyCompletion[],
   range: DashboardRange,
-  habits: DashboardHabit[],
-  streaks: ApiStreak[],
-  habitId = 'all',
 ): CompletionPoint[] {
-  const days = range === '7d' ? 7 : 30
+  return points.map((point) => ({
+    date: point.date,
+    label: formatPointLabel(point.date, range),
+    value: Math.round(point.completion_rate * 100),
+  }))
+}
+
+function buildHabitCompletionSeries(
+  entries: ApiEntry[],
+  range: DashboardRange,
+): CompletionPoint[] {
+  const days = getRangeDays(range)
   const today = new Date()
-  const activeHabits = Math.max(habits.length, 1)
-  const streakSignal = streaks.reduce(
-    (sum, streak) => sum + streak.current_streak + streak.longest_streak,
-    0,
-  )
-  const habitSignal =
-    habitId === 'all'
-      ? 0
-      : Array.from(habitId).reduce((sum, char) => sum + char.charCodeAt(0), 0)
+  const completedDates = new Set(entries.map((entry) => entry.entry_date))
 
   return Array.from({ length: days }, (_, index) => {
-    const date = addDays(today, index - days + 1)
-    const value = Math.min(
-      100,
-      Math.round(
-        42 + ((index * 11 + streakSignal + habitSignal) % 48) / activeHabits,
-      ),
-    )
+    const dateKey = toDateKey(addDays(today, index - days + 1))
 
     return {
-      date: toDateKey(date),
-      label:
-        range === '7d'
-          ? date.toLocaleDateString('en-US', { weekday: 'short' })
-          : date.toLocaleDateString('en-US', { day: '2-digit', month: 'short' }),
-      value,
+      date: dateKey,
+      label: formatPointLabel(dateKey, range),
+      value: completedDates.has(dateKey) ? 100 : 0,
     }
   })
 }
 
-function buildMockHeatmap(habits: DashboardHabit[], streaks: ApiStreak[]): HeatmapDay[] {
-  const today = new Date()
-  const maxCount = Math.max(habits.length, 1)
-  const streakSignal = streaks.reduce(
-    (sum, streak) => sum + streak.current_streak,
-    0,
+async function getCompletionSeries(
+  range: DashboardRange,
+  habitId: string,
+): Promise<CompletionPoint[]> {
+  if (habitId !== 'all') {
+    const response = await apiClient.get<ApiEntry[]>(`/habits/${habitId}/entries`, {
+      params: {
+        from: getRangeStart(range),
+        to: getRangeEnd(),
+      },
+    })
+
+    return buildHabitCompletionSeries(response.data, range)
+  }
+
+  const response = await apiClient.get<ApiDailyCompletion[]>(
+    '/analytics/daily-completion',
+    {
+      params: {
+        days: getRangeDays(range),
+      },
+    },
   )
 
-  return Array.from({ length: 365 }, (_, index) => {
-    const date = addDays(today, index - 364)
-
-    return {
-      count: (index + streakSignal + date.getDay()) % (maxCount + 1),
-      date: toDateKey(date),
-    }
-  })
+  return normalizeCompletionSeries(response.data, range)
 }
 
-function buildMockWeeklyHabits(
-  habits: DashboardHabit[],
-  streaks: ApiStreak[],
-): WeeklyHabit[] {
+function normalizeHeatmap(days: ApiHeatmapDay[]): HeatmapDay[] {
+  return days.map((day) => ({
+    count: day.count,
+    date: day.date,
+  }))
+}
+
+function getCurrentWeek() {
   const today = new Date()
   const mondayOffset = today.getDay() === 0 ? -6 : 1 - today.getDay()
   const monday = addDays(today, mondayOffset)
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
-  return habits.map((habit, habitIndex) => {
+  return days.map((day, index) => ({
+    date: toDateKey(addDays(monday, index)),
+    day,
+  }))
+}
+
+async function getWeeklyHabits(
+  habits: DashboardHabit[],
+  streaks: ApiStreak[],
+): Promise<WeeklyHabit[]> {
+  const week = getCurrentWeek()
+  const from = week[0]?.date
+  const to = week.at(-1)?.date
+
+  const entriesByHabit = await Promise.all(
+    habits.map(async (habit) => {
+      const response = await apiClient.get<ApiEntry[]>(
+        `/habits/${habit.id}/entries`,
+        {
+          params: {
+            from,
+            to,
+          },
+        },
+      )
+
+      return {
+        entries: response.data,
+        habit,
+      }
+    }),
+  )
+
+  return entriesByHabit.map(({ entries, habit }) => {
+    const completedDates = new Set(entries.map((entry) => entry.entry_date))
     const streak = streaks.find(
       (currentStreak) => String(currentStreak.habit_id) === habit.id,
     )
 
     return {
-      days: days.map((day, dayIndex) => ({
-        completed:
-          ((habitIndex + 1) * (dayIndex + 2) + (streak?.current_streak ?? 0)) %
-            4 !==
-          0,
-        date: toDateKey(addDays(monday, dayIndex)),
-        day,
+      days: week.map((day) => ({
+        completed: completedDates.has(day.date),
+        date: day.date,
+        day: day.day,
       })),
       habitId: habit.id,
       habitName: habit.name,
@@ -131,32 +200,26 @@ export async function getDashboardAnalytics(
   range: DashboardRange,
   habitId = 'all',
 ): Promise<DashboardAnalytics> {
-  if (shouldUseMocks) {
-    return getDashboardAnalyticsMock(range, habitId)
-  }
-
-  const [habits, streaksResponse] = await Promise.all([
-    listHabits(),
-    apiClient.get<ApiStreaksResponse>('/analytics/streaks'),
-  ])
+  const [habits, streaksResponse, heatmapResponse, completionSeries] =
+    await Promise.all([
+      listHabits(),
+      apiClient.get<ApiStreaksResponse>('/analytics/streaks'),
+      apiClient.get<ApiHeatmapDay[]>('/analytics/heatmap'),
+      getCompletionSeries(range, habitId),
+    ])
   const normalizedHabits = normalizeHabits(habits)
   const streaks = streaksResponse.data.habits
-  const heatmap = buildMockHeatmap(normalizedHabits, streaks)
-  const completionSeries = buildMockCompletionSeries(
-    range,
-    normalizedHabits,
-    streaks,
-    habitId,
-  )
+  const heatmap = normalizeHeatmap(heatmapResponse.data)
+  const weeklyHabits = await getWeeklyHabits(normalizedHabits, streaks)
 
   return {
     completionSeries,
     dataSources: [
       { label: 'Habits', source: 'backend' },
       { label: 'Streaks', source: 'backend' },
-      { label: 'Completion summary', source: 'mock' },
-      { label: 'Heatmap', source: 'mock' },
-      { label: 'Weekly entries', source: 'mock' },
+      { label: 'Completion summary', source: 'backend' },
+      { label: 'Heatmap', source: 'backend' },
+      { label: 'Weekly entries', source: 'backend' },
     ],
     habits: normalizedHabits,
     heatmap,
@@ -171,6 +234,6 @@ export async function getDashboardAnalytics(
       ),
       totalCompletions: heatmap.reduce((sum, day) => sum + day.count, 0),
     },
-    weeklyHabits: buildMockWeeklyHabits(normalizedHabits, streaks),
+    weeklyHabits,
   }
 }

@@ -38,7 +38,7 @@ export type DashboardStats = {
 
 export type DashboardDataSource = {
   label: string
-  source: 'backend' | 'mock'
+  source: 'backend'
 }
 
 export type DashboardAnalytics = {
