@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import {
   CartesianGrid,
   Line,
@@ -11,6 +11,7 @@ import {
 
 import { Card, Spinner } from '../../components/ui'
 import { getDashboardAnalytics } from '../../services/dashboard/dashboard-service'
+import { saveNotificationSettings } from '../../services/notifications/notifications-service'
 import type {
   DashboardAnalytics,
   DashboardRange,
@@ -71,6 +72,12 @@ export function DashboardPage() {
   const [range, setRange] = useState<DashboardRange>('7d')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false)
+  const [reminderTime, setReminderTime] = useState('09:00')
+  const [notificationMessage, setNotificationMessage] = useState<string | null>(
+    null,
+  )
+  const [isSavingNotifications, setIsSavingNotifications] = useState(false)
 
   useEffect(() => {
     async function loadDashboard() {
@@ -119,6 +126,28 @@ export function DashboardPage() {
 
     return analytics.heatmap.reduce((max, day) => Math.max(max, day.count), 0)
   }, [analytics])
+
+  async function handleNotificationSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    try {
+      setIsSavingNotifications(true)
+      setNotificationMessage(null)
+      await saveNotificationSettings({
+        enabled: notificationsEnabled,
+        reminderTime,
+      })
+      setNotificationMessage('Reminder settings saved.')
+    } catch (error) {
+      setNotificationMessage(
+        error instanceof Error
+          ? error.message
+          : 'Unable to save reminder settings.',
+      )
+    } finally {
+      setIsSavingNotifications(false)
+    }
+  }
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
@@ -344,6 +373,140 @@ export function DashboardPage() {
                   ))}
                 </div>
               </div>
+            </Card>
+
+            <section className="grid gap-4 lg:grid-cols-3">
+              <Card>
+                <div className="mb-4">
+                  <h3 className="font-semibold">Completion summary</h3>
+                  <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                    Weekly and monthly rates by habit.
+                  </p>
+                </div>
+                <div className="space-y-3">
+                  {analytics.summary.slice(0, 5).map((habit) => (
+                    <div
+                      key={habit.habitId}
+                      className="rounded-lg border border-[var(--color-border)] p-3"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="truncate text-sm font-medium">
+                          {habit.habitName}
+                        </span>
+                        <span className="text-xs text-[var(--color-text-muted)]">
+                          {habit.totalEntries} entries
+                        </span>
+                      </div>
+                      <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
+                        <span>{habit.weeklyCompletionRate}% week</span>
+                        <span>{habit.monthlyCompletionRate}% month</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+
+              <Card>
+                <div className="mb-4">
+                  <h3 className="font-semibold">Correlations</h3>
+                  <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                    Habit pairs that move together.
+                  </p>
+                </div>
+                {analytics.correlations.length > 0 ? (
+                  <div className="space-y-3">
+                    {analytics.correlations.slice(0, 5).map((item) => (
+                      <div
+                        key={`${item.habitAName}-${item.habitBName}`}
+                        className="rounded-lg border border-[var(--color-border)] p-3 text-sm"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="min-w-0 truncate">
+                            {item.habitAName} + {item.habitBName}
+                          </span>
+                          <strong>{Math.round(item.correlation * 100)}%</strong>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-[var(--color-text-muted)]">
+                    Add at least two habits with history to see correlations.
+                  </p>
+                )}
+              </Card>
+
+              <Card>
+                <div className="mb-4">
+                  <h3 className="font-semibold">Prediction</h3>
+                  <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                    Estimated chance of completing each habit today.
+                  </p>
+                </div>
+                <div className="space-y-3">
+                  {analytics.predictions.slice(0, 5).map((item) => (
+                    <div key={item.habitId} className="space-y-1">
+                      <div className="flex items-center justify-between gap-3 text-sm">
+                        <span className="truncate">{item.habitName}</span>
+                        <strong>{item.probability}%</strong>
+                      </div>
+                      <div className="h-2 rounded-full bg-[var(--color-surface-muted)]">
+                        <div
+                          className="h-2 rounded-full bg-[var(--color-accent)]"
+                          style={{ width: `${item.probability}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </section>
+
+            <Card>
+              <div className="mb-4">
+                <h3 className="font-semibold">Reminder settings</h3>
+                <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                  Configure the backend email reminder setting for this account.
+                </p>
+              </div>
+              <form
+                className="grid gap-3 sm:grid-cols-[1fr_160px_120px] sm:items-end"
+                onSubmit={(event) => void handleNotificationSubmit(event)}
+              >
+                <label className="flex items-center gap-3 rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm">
+                  <input
+                    checked={notificationsEnabled}
+                    className="h-4 w-4 accent-[var(--color-accent)]"
+                    type="checkbox"
+                    onChange={(event) =>
+                      setNotificationsEnabled(event.target.checked)
+                    }
+                  />
+                  Email reminders
+                </label>
+                <label className="grid gap-1 text-sm">
+                  <span className="text-[var(--color-text-muted)]">Time</span>
+                  <input
+                    className="h-10 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-soft)]"
+                    disabled={!notificationsEnabled}
+                    type="time"
+                    value={reminderTime}
+                    onChange={(event) => setReminderTime(event.target.value)}
+                  />
+                </label>
+                <button
+                  className="h-10 cursor-pointer rounded-lg border border-transparent bg-[var(--color-accent)] px-3 text-sm font-medium text-[var(--color-surface)] transition-colors hover:bg-[var(--color-accent-strong)] disabled:cursor-not-allowed disabled:opacity-55"
+                  disabled={isSavingNotifications}
+                  type="submit"
+                >
+                  {isSavingNotifications ? 'Saving...' : 'Save'}
+                </button>
+              </form>
+              {notificationMessage ? (
+                <p className="mt-3 text-sm text-[var(--color-text-muted)]">
+                  {notificationMessage}
+                </p>
+              ) : null}
             </Card>
 
             <Card className="p-0">

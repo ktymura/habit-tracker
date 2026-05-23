@@ -36,10 +36,33 @@ export type DashboardStats = {
   totalCompletions: number
 }
 
+export type SummaryHabit = {
+  habitId: string
+  habitName: string
+  monthlyCompletionRate: number
+  totalEntries: number
+  weeklyCompletionRate: number
+}
+
+export type CorrelationPair = {
+  correlation: number
+  habitAName: string
+  habitBName: string
+}
+
+export type PredictionItem = {
+  habitId: string
+  habitName: string
+  probability: number
+}
+
 export type DashboardAnalytics = {
   completionSeries: CompletionPoint[]
+  correlations: CorrelationPair[]
   habits: DashboardHabit[]
   heatmap: HeatmapDay[]
+  predictions: PredictionItem[]
   stats: DashboardStats
+  summary: SummaryHabit[]
   weeklyHabits: WeeklyHabit[]
 }

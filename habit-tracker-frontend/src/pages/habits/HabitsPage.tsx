@@ -3,6 +3,7 @@ import { type FormEvent, useEffect, useState } from 'react'
 import { Button, Card, Input, Modal, Toast } from '../../components/ui'
 import {
   createHabit,
+  deleteHabit,
   listHabits,
   toggleHabitToday,
   updateHabit,
@@ -68,6 +69,7 @@ export function HabitsPage() {
   const [formError, setFormError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [pendingHabitIds, setPendingHabitIds] = useState<string[]>([])
   const [toast, setToast] = useState<{
@@ -209,6 +211,38 @@ export function HabitsPage() {
       setPendingHabitIds((currentIds) =>
         currentIds.filter((habitId) => habitId !== habit.id),
       )
+    }
+  }
+
+  async function handleDeleteHabit() {
+    if (!editingHabit) {
+      return
+    }
+
+    const confirmed = window.confirm(
+      `Delete "${editingHabit.name}" and its completion history?`,
+    )
+
+    if (!confirmed) {
+      return
+    }
+
+    try {
+      setIsDeleting(true)
+      setFormError(null)
+      await deleteHabit(editingHabit.id)
+      setHabits((currentHabits) =>
+        currentHabits.filter((habit) => habit.id !== editingHabit.id),
+      )
+      setToast({ message: 'Habit deleted.' })
+      resetHabitForm()
+      setIsModalOpen(false)
+    } catch (error) {
+      setFormError(
+        error instanceof Error ? error.message : 'Unable to delete habit.',
+      )
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -427,6 +461,19 @@ export function HabitsPage() {
           >
             Save habit
           </Button>
+
+          {editingHabit ? (
+            <Button
+              fullWidth
+              className="border-[var(--color-danger)] bg-[var(--color-danger-soft)] text-[var(--color-danger)] hover:bg-[oklch(92%_0.04_25)]"
+              disabled={isSaving}
+              isLoading={isDeleting}
+              loadingLabel="Deleting..."
+              onClick={() => void handleDeleteHabit()}
+            >
+              Delete habit
+            </Button>
+          ) : null}
         </form>
       </Modal>
 

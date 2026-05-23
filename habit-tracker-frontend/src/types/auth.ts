@@ -10,6 +10,7 @@ export type RegisterPayload = {
 }
 
 export type AuthResponse = {
+  refreshToken?: string
   token: string
   userEmail: string
 }
