@@ -62,10 +62,10 @@ docker compose up --build
 - Swagger: http://localhost:8000/docs
 - Baza: `localhost:5432` (user `postgres`, hasło `Test123`, db `habit_tracker`)
 
-Seed danych testowych (3 userów, 10 nawyków, 90 dni historii):
+Seed danych demonstracyjnych - 1 user, 6 nawyków, 6 miesięcy historii (user `demo@example.com`, hasło `Demo!0912#`):
 
 ```bash
-docker compose exec app python seed.py
+docker compose exec app python seed_demo.py
 ```
 
 > docker-compose nie odpala frontendu — odpal go osobno (`npm run dev`, sekcja niżej) albo korzystaj ze Swaggera.
