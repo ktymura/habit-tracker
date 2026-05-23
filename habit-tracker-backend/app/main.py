@@ -9,6 +9,7 @@ from app.routers.auth import router as auth_router
 from app.routers.entries import router as entries_router
 from app.routers.habits import router as habits_router
 from app.routers.health import router as health_router
+from app.routers.notifications import router as notifications_router
 
 
 app = FastAPI(title=settings.APP_NAME, version=settings.APP_VERSION)
@@ -21,6 +22,7 @@ app.include_router(auth_router)
 app.include_router(habits_router)
 app.include_router(entries_router)
 app.include_router(analytics_router)
+app.include_router(notifications_router)
 
 
 @app.get("/")
