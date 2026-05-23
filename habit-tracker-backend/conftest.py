@@ -23,9 +23,7 @@ def db():
         session.close()
         with engine.connect() as conn:
             conn.execute(
-                text(
-                    "DROP MATERIALIZED VIEW IF EXISTS user_heatmap_mv CASCADE"
-                )
+                text("DROP MATERIALIZED VIEW IF EXISTS user_heatmap_mv CASCADE")
             )
             conn.execute(
                 text(
