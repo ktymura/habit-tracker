@@ -289,7 +289,7 @@ export function HabitsPage() {
                 {habits.map((habit) => (
                   <article
                     key={habit.id}
-                    className="grid gap-3 px-4 py-4 transition-colors hover:bg-[var(--color-surface-muted)] sm:grid-cols-[minmax(0,1fr)_120px_120px_82px] sm:items-center sm:px-5"
+                    className="grid grid-cols-[minmax(0,1fr)_96px] gap-3 px-4 py-4 transition-colors hover:bg-[var(--color-surface-muted)] sm:grid-cols-[minmax(0,1fr)_120px_120px_82px] sm:items-center sm:px-5"
                   >
                     <div className="flex min-w-0 items-center gap-3">
                       <span
@@ -301,12 +301,12 @@ export function HabitsPage() {
                       <h3 className="truncate font-medium">{habit.name}</h3>
                     </div>
 
-                    <span className="capitalize text-sm text-[var(--color-text-muted)]">
+                    <span className="col-span-2 capitalize text-sm text-[var(--color-text-muted)] sm:col-auto">
                       {habit.frequency}
                     </span>
 
                     <label
-                      className={`inline-flex h-10 w-30S cursor-pointer items-center justify-center gap-2 rounded-lg border px-3 text-sm font-medium leading-none transition-colors ${
+                      className={`inline-flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border px-3 text-sm font-medium leading-none transition-colors sm:w-32 ${
                         habit.completedToday
                           ? 'border-[var(--color-accent)] bg-[var(--color-accent)] text-[var(--color-surface)]'
                           : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:border-[var(--color-border-strong)] hover:bg-[var(--color-surface-muted)]'
@@ -341,7 +341,7 @@ export function HabitsPage() {
                     </label>
 
                     <Button
-                      className="h-10 w-24 px-3 text-sm font-medium leading-none"
+                      className="h-10 w-full px-3 text-sm font-medium leading-none sm:w-24"
                       variant="secondary"
                       onClick={() => openEditModal(habit)}
                     >
@@ -463,16 +463,14 @@ export function HabitsPage() {
           </Button>
 
           {editingHabit ? (
-            <Button
-              fullWidth
-              className="border-[var(--color-danger)] bg-[var(--color-danger-soft)] text-[var(--color-danger)] hover:bg-[oklch(92%_0.04_25)]"
-              disabled={isSaving}
-              isLoading={isDeleting}
-              loadingLabel="Deleting..."
+            <button
+              className="inline-flex min-h-10 w-full cursor-pointer items-center justify-center rounded-lg border border-[var(--color-danger)] bg-[var(--color-danger-soft)] px-3.5 py-2 text-sm font-medium text-[var(--color-danger)] transition-colors hover:bg-[oklch(92%_0.04_25)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-danger)] disabled:cursor-not-allowed disabled:opacity-55"
+              disabled={isSaving || isDeleting}
+              type="button"
               onClick={() => void handleDeleteHabit()}
             >
-              Delete habit
-            </Button>
+              {isDeleting ? 'Deleting...' : 'Delete habit'}
+            </button>
           ) : null}
         </form>
       </Modal>

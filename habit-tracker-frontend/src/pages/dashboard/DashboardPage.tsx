@@ -383,8 +383,8 @@ export function DashboardPage() {
                     Weekly and monthly rates by habit.
                   </p>
                 </div>
-                <div className="space-y-3">
-                  {analytics.summary.slice(0, 5).map((habit) => (
+                <div className="max-h-96 space-y-3 overflow-y-auto pr-1">
+                  {analytics.summary.map((habit) => (
                     <div
                       key={habit.habitId}
                       className="rounded-lg border border-[var(--color-border)] p-3"
@@ -414,8 +414,8 @@ export function DashboardPage() {
                   </p>
                 </div>
                 {analytics.correlations.length > 0 ? (
-                  <div className="space-y-3">
-                    {analytics.correlations.slice(0, 5).map((item) => (
+                  <div className="max-h-96 space-y-3 overflow-y-auto pr-1">
+                    {analytics.correlations.map((item) => (
                       <div
                         key={`${item.habitAName}-${item.habitBName}`}
                         className="rounded-lg border border-[var(--color-border)] p-3 text-sm"
@@ -443,8 +443,8 @@ export function DashboardPage() {
                     Estimated chance of completing each habit today.
                   </p>
                 </div>
-                <div className="space-y-3">
-                  {analytics.predictions.slice(0, 5).map((item) => (
+                <div className="max-h-96 space-y-3 overflow-y-auto pr-1">
+                  {analytics.predictions.map((item) => (
                     <div key={item.habitId} className="space-y-1">
                       <div className="flex items-center justify-between gap-3 text-sm">
                         <span className="truncate">{item.habitName}</span>
