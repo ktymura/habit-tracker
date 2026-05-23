@@ -12,13 +12,15 @@ docker compose up --build
 - Baza danych: `localhost:5432`
 - Dokumentacja API (Swagger): http://localhost:8000/docs
 
-### Seed danych testowych
+### Seed danych demonstracyjnych
 
 ```bash
-docker compose exec app python seed.py
+docker compose exec app python seed_demo.py
 ```
 
-Tworzy 3 użytkowników, 10 nawyków i 90 dni historii wpisów.
+Tworzy demonstracyjnego użytkownika z 6 nawykami i 6-miesięczną historią.
+Login: demo@example.com
+Hasło: Demo!0912#
 
 ## Uruchomienie lokalne (bez Dockera)
 
