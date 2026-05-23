@@ -68,6 +68,27 @@ pytest -v
 
 GitHub Actions uruchamia lint + testy przy każdym push na `dev` i `main`.
 
+## Testy E2E (Playwright)
+
+End-to-end testy w `habit-tracker-frontend/e2e/` chodzą przeciwko realnemu backendowi z `VITE_USE_MOCKS=false`. Playwright sam odpala uvicorn (BE :8000) i `vite dev` (FE :5173); Postgres musisz wystartować osobno.
+
+**Wymagania:**
+- Postgres z `.env` dostępny (np. `docker compose up -d db`).
+- W `habit-tracker-backend/` venv z zainstalowanym `requirements.txt` — playwright odpala `python -m uvicorn`, więc `python` w PATH musi mieć uvicorn (np. `source habit-tracker-backend/.venv/bin/activate` przed runem).
+- W `habit-tracker-frontend/` po pierwszym razie: `npx playwright install chromium`.
+
+**Run:**
+
+```bash
+docker compose up -d db
+cd habit-tracker-frontend
+npm run test:e2e
+```
+
+Playwright odpala BE + FE w tle, uruchamia 3 testy (login, toggle habita, dashboard), gasi serwery. Raport HTML po failu: `playwright-report/index.html`.
+
+Każdy test rejestruje świeżego usera via `POST /auth/register` z unikalnym emailem (`<prefix>-<timestamp>-<random>@example.com`), więc testy są od siebie niezależne i kolejne runy nie wymagają czyszczenia bazy.
+
 ## Struktura projektu
 
 ```
