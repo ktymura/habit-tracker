@@ -488,7 +488,6 @@ export function DashboardPage() {
                   <span className="text-[var(--color-text-muted)]">Time</span>
                   <input
                     className="h-10 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-soft)]"
-                    disabled={!notificationsEnabled}
                     type="time"
                     value={reminderTime}
                     onChange={(event) => setReminderTime(event.target.value)}
