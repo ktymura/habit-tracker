@@ -44,3 +44,8 @@ class HabitStreakResponse(BaseModel):
 
 class StreaksResponse(BaseModel):
     habits: list[HabitStreakResponse]
+
+
+class DailyCompletionItem(BaseModel):
+    date: date
+    completion_rate: float

@@ -1,5 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from datetime import date
+from app.models.entry import Entry
+
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
@@ -21,7 +24,36 @@ router = APIRouter(prefix="/habits", tags=["habits"])
 def get_habits(
     current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ) -> list[HabitResponse]:
-    return get_user_habits(db, current_user.id)
+    habits = get_user_habits(db, current_user.id)
+    today = date.today()
+    completed_today_ids = (
+        {
+            row[0]
+            for row in db.query(Entry.habit_id)
+            .filter(
+                Entry.entry_date == today,
+                Entry.habit_id.in_([h.id for h in habits]),
+            )
+            .all()
+        }
+        if habits
+        else set()
+    )
+    return [
+        HabitResponse.model_validate(
+            {
+                "id": h.id,
+                "user_id": h.user_id,
+                "name": h.name,
+                "color": h.color,
+                "icon": h.icon,
+                "frequency": h.frequency,
+                "created_at": h.created_at,
+                "completed_today": h.id in completed_today_ids,
+            }
+        )
+        for h in habits
+    ]
 
 
 @router.post("", response_model=HabitResponse, status_code=status.HTTP_201_CREATED)

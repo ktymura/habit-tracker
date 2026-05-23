@@ -224,3 +224,56 @@ def predict_habit_probability(
     )
     analytics_cache.set(cache_key, probability, CACHE_TTL_SECONDS)
     return probability
+
+
+def get_daily_completion(db: Session, user_id: int, days: int = 30) -> list[dict]:
+    cache_key = f"analytics:user:{user_id}:daily_completion:{days}"
+    cached = analytics_cache.get(cache_key)
+    if cached is not None:
+        return cached
+
+    today = date.today()
+    start_date = today - timedelta(days=days - 1)
+
+    total_habits = (
+        db.query(func.count(Habit.id)).filter(Habit.user_id == user_id).scalar()
+    )
+
+    if not total_habits:
+        result = [
+            {"date": start_date + timedelta(days=i), "completion_rate": 0.0}
+            for i in range(days)
+        ]
+        analytics_cache.set(cache_key, result, CACHE_TTL_SECONDS)
+        return result
+
+    rows = (
+        db.query(
+            Entry.entry_date,
+            func.count(func.distinct(Entry.habit_id)).label("completed_count"),
+        )
+        .join(Habit, Habit.id == Entry.habit_id)
+        .filter(
+            Habit.user_id == user_id,
+            Entry.entry_date >= start_date,
+            Entry.entry_date <= today,
+        )
+        .group_by(Entry.entry_date)
+        .all()
+    )
+
+    indexed = {row.entry_date: row.completed_count for row in rows}
+
+    result = [
+        {
+            "date": start_date + timedelta(days=i),
+            "completion_rate": round(
+                min(indexed.get(start_date + timedelta(days=i), 0) / total_habits, 1.0),
+                2,
+            ),
+        }
+        for i in range(days)
+    ]
+
+    analytics_cache.set(cache_key, result, CACHE_TTL_SECONDS)
+    return result

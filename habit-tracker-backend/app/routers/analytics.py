@@ -10,6 +10,7 @@ from app.models.user import User
 from app.schemas.analytics import (
     AnalyticsSummaryItem,
     CorrelationItem,
+    DailyCompletionItem,
     DailyCountItem,
     HabitStreakResponse,
     PredictionResponse,
@@ -17,6 +18,7 @@ from app.schemas.analytics import (
 )
 from app.services.analytics_service import (
     get_correlations,
+    get_daily_completion,
     get_heatmap,
     get_summary,
     predict_habit_probability,
@@ -93,3 +95,12 @@ def predict_endpoint(
         )
 
     return PredictionResponse(probability=probability)
+
+
+@router.get("/daily-completion", response_model=list[DailyCompletionItem])
+def get_daily_completion_endpoint(
+    days: int = 30,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[DailyCompletionItem]:
+    return get_daily_completion(db, current_user.id, days)
