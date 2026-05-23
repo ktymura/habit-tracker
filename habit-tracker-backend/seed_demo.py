@@ -37,7 +37,9 @@ HABITS = [
 ]
 
 
-def _rate(base: float, boost: float, improvement: float, months_ago: float, is_weekday: bool) -> float:
+def _rate(
+    base: float, boost: float, improvement: float, months_ago: float, is_weekday: bool
+) -> float:
     """Oblicza prawdopodobieństwo wpisu dla danego dnia z uwzględnieniem trendów."""
     # Starsze daty mają niższy rate (symulacja poprawy nawyku w czasie)
     r = base + improvement * (3 - months_ago) / 3
@@ -51,10 +53,16 @@ def seed_demo(db: Session) -> None:
     print("Szukam/tworzę konto demo...")
     user = db.query(User).filter(User.email == DEMO_EMAIL).first()
     if user:
-        habit_ids = [row.id for row in db.query(Habit.id).filter(Habit.user_id == user.id).all()]
+        habit_ids = [
+            row.id for row in db.query(Habit.id).filter(Habit.user_id == user.id).all()
+        ]
         if habit_ids:
-            db.query(Entry).filter(Entry.habit_id.in_(habit_ids)).delete(synchronize_session=False)
-            db.query(Habit).filter(Habit.user_id == user.id).delete(synchronize_session=False)
+            db.query(Entry).filter(Entry.habit_id.in_(habit_ids)).delete(
+                synchronize_session=False
+            )
+            db.query(Habit).filter(Habit.user_id == user.id).delete(
+                synchronize_session=False
+            )
         db.flush()
         print(f"Wyczyszczono poprzednie dane demo (id={user.id})")
     else:
@@ -68,7 +76,9 @@ def seed_demo(db: Session) -> None:
 
     print("Generuję nawyki i wpisy...")
     for name, color, icon, base_rate, weekday_boost, monthly_improvement in HABITS:
-        habit = Habit(user_id=user.id, name=name, color=color, icon=icon, frequency="daily")
+        habit = Habit(
+            user_id=user.id, name=name, color=color, icon=icon, frequency="daily"
+        )
         db.add(habit)
         db.flush()
 
@@ -77,7 +87,9 @@ def seed_demo(db: Session) -> None:
             months_ago = day_offset / 30.0
             is_weekday = entry_date.weekday() < 5
 
-            prob = _rate(base_rate, weekday_boost, monthly_improvement, months_ago, is_weekday)
+            prob = _rate(
+                base_rate, weekday_boost, monthly_improvement, months_ago, is_weekday
+            )
             if rng.random() < prob:
                 db.add(Entry(habit_id=habit.id, entry_date=entry_date))
                 total_entries += 1
