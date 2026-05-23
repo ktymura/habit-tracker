@@ -14,8 +14,8 @@ class AnalyticsSummaryItem(BaseModel):
     habit_id: int
     habit_name: str
     total_entries: int
-    completion_rate: float
-
+    weekly_completion_rate: float
+    monthly_completion_rate: float
 
 class DailyCountItem(BaseModel):
     date: date

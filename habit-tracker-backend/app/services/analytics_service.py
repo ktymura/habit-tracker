@@ -1,5 +1,6 @@
 from datetime import date, timedelta
 from itertools import combinations
+import pandas as pd
 
 from sqlalchemy.orm import Session
 
@@ -21,6 +22,10 @@ def get_summary(
     if cached is not None:
         return cached
 
+    today = date.today()
+    week_start = today - timedelta(days=6)
+    month_start = today - timedelta(days=29)
+
     habits = db.query(Habit).filter(
         Habit.user_id == user_id
     ).all()
@@ -34,12 +39,23 @@ def get_summary(
 
         completion_rate = round(min(total_entries / 30, 1.0), 2)
 
+        weekly_entries = db.query(Entry).filter(
+            Entry.habit_id == habit.id,
+            Entry.entry_date >= week_start,
+        ).count()
+
+        monthly_entries = db.query(Entry).filter(
+            Entry.habit_id == habit.id,
+            Entry.entry_date >= month_start,
+        ).count()
+
         result.append(
             {
                 "habit_id": habit.id,
                 "habit_name": habit.name,
                 "total_entries": total_entries,
-                "completion_rate": completion_rate
+                "weekly_completion_rate": round(min(weekly_entries / 7, 1.0), 2),
+                "monthly_completion_rate": round(min(monthly_entries / 30, 1.0), 2),
             }
         )
 
@@ -104,30 +120,31 @@ def get_correlations(
         Habit.user_id == user_id
     ).all()
 
+    if len(habits) < 2:
+        analytics_cache.set(cache_key, [], CACHE_TTL_SECONDS)
+        return []
+
+    today = date.today()
+    start = today - timedelta(days=89)
+    all_dates = [start + timedelta(days=i) for i in range(90)]
+
+    matrix: dict[int, list[int]] = {}
+    for habit in habits:
+        done_dates = {
+            row[0]
+            for row in db.query(Entry.entry_date).filter(
+                Entry.habit_id == habit.id,
+                Entry.entry_date >= start,
+            ).all()
+        }
+        matrix[habit.id] = [1 if d in done_dates else 0 for d in all_dates]
+    
+    corr_matrix = pd.DataFrame(matrix).corr(method="pearson")
+
     result = []
 
     for habit_a, habit_b in combinations(habits, 2):
-        dates_a = {
-            row[0]
-            for row in db.query(Entry.entry_date).filter(
-                Entry.habit_id == habit_a.id
-            ).all()
-        }
-
-        dates_b = {
-            row[0]
-            for row in db.query(Entry.entry_date).filter(
-                Entry.habit_id == habit_b.id
-            ).all()
-        }
-
-        union_dates = dates_a.union(dates_b)
-
-        if not union_dates:
-            correlation = 0.0
-        else:
-            both_done = len(dates_a.intersection(dates_b))
-            correlation = round(both_done / len(union_dates), 2)
+        corr_value = corr_matrix.loc[habit_a.id, habit_b.id]
 
         result.append(
             {
@@ -135,7 +152,7 @@ def get_correlations(
                 "habit_a_name": habit_a.name,
                 "habit_b_id": habit_b.id,
                 "habit_b_name": habit_b.name,
-                "correlation": correlation
+                "correlation": round(float(corr_value) if pd.notna(corr_value) else 0.0, 2),
             }
         )
 
