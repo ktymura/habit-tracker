@@ -12,6 +12,7 @@ engine = create_engine(
     future=True,
     connect_args={"connect_timeout": 5},
 )
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 

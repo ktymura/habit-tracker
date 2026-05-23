@@ -46,10 +46,21 @@ HABITS = [
 
 
 def seed(db: Session) -> None:
-    print("Czyszczenie istniejących danych...")
-    db.query(Entry).delete()
-    db.query(Habit).delete()
-    db.query(User).delete()
+    print("Czyszczenie danych dla zdefiniowanych użytkowników...")
+    emails = [u["email"] for u in USERS]
+    existing_users = db.query(User).filter(User.email.in_(emails)).all()
+    for user in existing_users:
+        habit_ids = [
+            row.id for row in db.query(Habit.id).filter(Habit.user_id == user.id).all()
+        ]
+        if habit_ids:
+            db.query(Entry).filter(Entry.habit_id.in_(habit_ids)).delete(
+                synchronize_session=False
+            )
+            db.query(Habit).filter(Habit.user_id == user.id).delete(
+                synchronize_session=False
+            )
+        db.delete(user)
     db.commit()
 
     print("Tworzenie użytkowników...")

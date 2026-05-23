@@ -27,3 +27,4 @@ class HabitResponse(BaseModel):
     icon: str | None
     frequency: str
     created_at: datetime
+    completed_today: bool
