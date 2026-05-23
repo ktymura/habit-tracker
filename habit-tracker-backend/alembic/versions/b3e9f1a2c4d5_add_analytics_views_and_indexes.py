@@ -63,4 +63,4 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.execute("DROP VIEW IF EXISTS weekly_completion_rate")
     op.execute("DROP VIEW IF EXISTS daily_completion_rate")
-    op.drop_index("ix_entries_habit_date_perf", table_name="entries")
+    op.execute("DROP INDEX IF EXISTS ix_entries_habit_date_perf")
