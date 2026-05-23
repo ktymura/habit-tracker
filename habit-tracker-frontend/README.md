@@ -31,7 +31,6 @@ npm run format:check
 - `features/` - logika domenowa kolejnych funkcjonalnosci
 - `layouts/` - wspolne uklady stron
 - `lib/` - pomocnicze utilsy i konfiguracja
-- `mocks/` - mockowe dane i adaptery
 - `pages/` - ekrany aplikacji
 - `services/` - klient API i warstwa komunikacji
 - `styles/` - style globalne

@@ -34,7 +34,7 @@ export default defineConfig({
       command: 'npm run dev -- --port 5173 --strictPort',
       url: 'http://localhost:5173',
       reuseExistingServer: !isCI,
-      env: { VITE_USE_MOCKS: 'false', VITE_API_URL: '/api' },
+      env: { VITE_API_URL: '/api' },
       timeout: 60_000,
     },
   ],
