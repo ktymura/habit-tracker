@@ -24,6 +24,11 @@ def db():
         with engine.connect() as conn:
             conn.execute(
                 text(
+                    "DROP MATERIALIZED VIEW IF EXISTS user_heatmap_mv CASCADE"
+                )
+            )
+            conn.execute(
+                text(
                     "DROP VIEW IF EXISTS daily_completion_rate, weekly_completion_rate CASCADE"
                 )
             )
