@@ -89,6 +89,63 @@ Playwright odpala BE + FE w tle, uruchamia 3 testy (login, toggle habita, dashbo
 
 Każdy test rejestruje świeżego usera via `POST /auth/register` z unikalnym emailem (`<prefix>-<timestamp>-<random>@example.com`), więc testy są od siebie niezależne i kolejne runy nie wymagają czyszczenia bazy.
 
+## Deploy na Railway (staging)
+
+Staging stoi na Railway z trzema serwisami w jednym projekcie: **PostgreSQL** (managed plugin), **backend** (z `habit-tracker-backend/`) i **frontend** (z `habit-tracker-frontend/`). Konfiguracja per serwis siedzi w `railway.toml` w odpowiednim katalogu. CLI dostępne globalnie po `npm i -g @railway/cli`.
+
+### Pierwszy setup projektu
+
+```bash
+railway login
+railway init                              # utwórz projekt staging
+railway add --plugin postgresql           # provision DB
+```
+
+### Backend service
+
+Root directory: `habit-tracker-backend/`. Build: Dockerfile. Start: `./start.sh` (alembic upgrade + uvicorn na `$PORT`). Healthcheck: `/health/db`.
+
+Zmienne środowiskowe (skopiuj z `habit-tracker-backend/.env.staging.example` i ustaw via dashboard lub `railway variables`):
+
+| Zmienna | Skąd brać |
+|---------|-----------|
+| `DATABASE_URL` | auto-injektowana przez Railway przy zalinkowaniu Postgres pluginu |
+| `JWT_SECRET_KEY` | `openssl rand -hex 32` |
+| `JWT_REFRESH_SECRET_KEY` | `openssl rand -hex 32` (inna wartość) |
+| `CORS_ALLOWED_ORIGINS` | URL serwisu frontend (np. `https://habit-tracker-frontend-staging.up.railway.app`) |
+| `DEBUG` | `False` |
+
+Deploy:
+
+```bash
+cd habit-tracker-backend
+railway up --service backend
+```
+
+### Frontend service
+
+Root directory: `habit-tracker-frontend/`. Build: Nixpacks (`npm ci && npm run build`). Start: `npm run start` (serve static z `dist/` na `$PORT`). Healthcheck: `/`.
+
+Zmienna środowiskowa (z `habit-tracker-frontend/.env.staging.example`):
+
+| Zmienna | Wartość |
+|---------|---------|
+| `VITE_API_URL` | URL backendu (np. `https://habit-tracker-backend-staging.up.railway.app`). **Vite inline'uje ją w bundlu na buildzie — ustaw zanim odpalisz `railway up`.** |
+
+Deploy:
+
+```bash
+cd habit-tracker-frontend
+railway up --service frontend
+```
+
+### Po deployu
+
+- Backend healthcheck: `https://<backend-domain>/health/db` → `{"status":"ok","database":"connected"}`
+- Frontend: otwórz w przeglądarce, sprawdź Network że requesty walą na backend (nie na localhost)
+- Logi: `railway logs --service <name>`
+
+
 ## Struktura projektu
 
 ```

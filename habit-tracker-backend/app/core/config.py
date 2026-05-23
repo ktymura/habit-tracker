@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -20,6 +21,24 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    CORS_ALLOWED_ORIGINS: str = ""
+
+    @field_validator("DATABASE_URL", mode="after")
+    @classmethod
+    def normalize_database_url(cls, v: str) -> str:
+        if v.startswith("postgresql://"):
+            return v.replace("postgresql://", "postgresql+psycopg://", 1)
+        return v
+
+    @property
+    def cors_allowed_origins_list(self) -> list[str]:
+        if not self.CORS_ALLOWED_ORIGINS:
+            return []
+        return [
+            origin.strip()
+            for origin in self.CORS_ALLOWED_ORIGINS.split(",")
+            if origin.strip()
+        ]
 
 
 settings = Settings()
