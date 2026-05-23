@@ -17,6 +17,7 @@ class AnalyticsSummaryItem(BaseModel):
     weekly_completion_rate: float
     monthly_completion_rate: float
 
+
 class DailyCountItem(BaseModel):
     date: date
     count: int

@@ -18,14 +18,10 @@ class User(Base):
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
-    habits = relationship(
-        "Habit",
-        back_populates="user",
-        cascade="all, delete-orphan"
-    )
+    habits = relationship("Habit", back_populates="user", cascade="all, delete-orphan")
     notification_setting = relationship(
         "NotificationSetting",
         back_populates="user",
         cascade="all, delete-orphan",
-        uselist=False
+        uselist=False,
     )

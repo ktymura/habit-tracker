@@ -8,20 +8,17 @@ from app.models.user import User
 
 
 def upsert_notification_settings(
-    db: Session,
-    user: User,
-    enabled: bool,
-    reminder_time
+    db: Session, user: User, enabled: bool, reminder_time
 ) -> NotificationSetting:
-    setting = db.query(NotificationSetting).filter(
-        NotificationSetting.user_id == user.id
-    ).first()
+    setting = (
+        db.query(NotificationSetting)
+        .filter(NotificationSetting.user_id == user.id)
+        .first()
+    )
 
     if not setting:
         setting = NotificationSetting(
-            user_id=user.id,
-            enabled=enabled,
-            reminder_time=reminder_time
+            user_id=user.id, enabled=enabled, reminder_time=reminder_time
         )
         db.add(setting)
     else:
@@ -35,10 +32,7 @@ def upsert_notification_settings(
 
 
 def send_test_email(
-    smtp_host: str,
-    smtp_port: int,
-    sender_email: str,
-    receiver_email: str
+    smtp_host: str, smtp_port: int, sender_email: str, receiver_email: str
 ) -> None:
     message = EmailMessage()
     message["Subject"] = "Habit Tracker reminder"

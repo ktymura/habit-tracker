@@ -41,14 +41,9 @@ def delete_entry_by_date(db: Session, habit: Habit, entry_date: date) -> bool:
 
 
 def get_entries_for_habit(
-    db: Session,
-    habit: Habit,
-    date_from: date | None,
-    date_to: date | None
+    db: Session, habit: Habit, date_from: date | None, date_to: date | None
 ) -> list[Entry]:
-    query = db.query(Entry).filter(
-        Entry.habit_id == habit.id
-    )
+    query = db.query(Entry).filter(Entry.habit_id == habit.id)
 
     if date_from is not None:
         query = query.filter(Entry.entry_date >= date_from)

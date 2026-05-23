@@ -2,6 +2,7 @@ from datetime import date, timedelta
 from itertools import combinations
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
+from sqlalchemy import case, func, text
 
 from sqlalchemy.orm import Session
 
@@ -13,10 +14,7 @@ from app.models.habit import Habit
 CACHE_TTL_SECONDS = 300
 
 
-def get_summary(
-    db: Session,
-    user_id: int
-) -> list[dict]:
+def get_summary(db: Session, user_id: int) -> list[dict]:
     cache_key = f"analytics:user:{user_id}:summary"
     cached = analytics_cache.get(cache_key)
 
@@ -27,45 +25,40 @@ def get_summary(
     week_start = today - timedelta(days=6)
     month_start = today - timedelta(days=29)
 
-    habits = db.query(Habit).filter(
-        Habit.user_id == user_id
-    ).all()
-
-    result = []
-
-    for habit in habits:
-        total_entries = db.query(Entry).filter(
-            Entry.habit_id == habit.id
-        ).count()
-
-        weekly_entries = db.query(Entry).filter(
-            Entry.habit_id == habit.id,
-            Entry.entry_date >= week_start,
-        ).count()
-
-        monthly_entries = db.query(Entry).filter(
-            Entry.habit_id == habit.id,
-            Entry.entry_date >= month_start,
-        ).count()
-
-        result.append(
-            {
-                "habit_id": habit.id,
-                "habit_name": habit.name,
-                "total_entries": total_entries,
-                "weekly_completion_rate": round(min(weekly_entries / 7, 1.0), 2),
-                "monthly_completion_rate": round(min(monthly_entries / 30, 1.0), 2),
-            }
+    rows = (
+        db.query(
+            Habit.id.label("habit_id"),
+            Habit.name.label("habit_name"),
+            func.count(Entry.id).label("total_entries"),
+            func.count(case((Entry.entry_date >= week_start, Entry.id))).label(
+                "weekly_entries"
+            ),
+            func.count(case((Entry.entry_date >= month_start, Entry.id))).label(
+                "monthly_entries"
+            ),
         )
+        .outerjoin(Entry, Entry.habit_id == Habit.id)
+        .filter(Habit.user_id == user_id)
+        .group_by(Habit.id, Habit.name)
+        .all()
+    )
+
+    result = [
+        {
+            "habit_id": row.habit_id,
+            "habit_name": row.habit_name,
+            "total_entries": row.total_entries,
+            "weekly_completion_rate": round(min(row.weekly_entries / 7, 1.0), 2),
+            "monthly_completion_rate": round(min(row.monthly_entries / 30, 1.0), 2),
+        }
+        for row in rows
+    ]
 
     analytics_cache.set(cache_key, result, CACHE_TTL_SECONDS)
     return result
 
 
-def get_heatmap(
-    db: Session,
-    user_id: int
-) -> list[dict]:
+def get_heatmap(db: Session, user_id: int) -> list[dict]:
     cache_key = f"analytics:user:{user_id}:heatmap"
     cached = analytics_cache.get(cache_key)
 
@@ -74,50 +67,38 @@ def get_heatmap(
 
     start_date = date.today() - timedelta(days=364)
 
-    rows = (
-        db.query(Entry.entry_date)
-        .join(Habit, Habit.id == Entry.habit_id)
-        .filter(
-            Habit.user_id == user_id,
-            Entry.entry_date >= start_date
-        )
-        .all()
-    )
+    rows = db.execute(
+        text("""
+            SELECT date, count
+            FROM user_heatmap_mv
+            WHERE user_id = :user_id AND date >= :start_date
+            ORDER BY date
+        """),
+        {"user_id": user_id, "start_date": start_date},
+    ).fetchall()
 
-    counts: dict[date, int] = {}
-
-    for row in rows:
-        entry_date = row[0]
-        counts[entry_date] = counts.get(entry_date, 0) + 1
+    indexed = {row.date: row.count for row in rows}
 
     result = [
         {
-            "date": single_date,
-            "count": counts.get(single_date, 0)
+            "date": start_date + timedelta(days=i),
+            "count": indexed.get(start_date + timedelta(days=i), 0),
         }
-        for single_date in (
-            start_date + timedelta(days=day_number)
-            for day_number in range(365)
-        )
+        for i in range(365)
     ]
 
     analytics_cache.set(cache_key, result, CACHE_TTL_SECONDS)
     return result
 
 
-def get_correlations(
-    db: Session,
-    user_id: int
-) -> list[dict]:
+def get_correlations(db: Session, user_id: int) -> list[dict]:
     cache_key = f"analytics:user:{user_id}:correlations"
     cached = analytics_cache.get(cache_key)
 
     if cached is not None:
         return cached
 
-    habits = db.query(Habit).filter(
-        Habit.user_id == user_id
-    ).all()
+    habits = db.query(Habit).filter(Habit.user_id == user_id).all()
 
     if len(habits) < 2:
         analytics_cache.set(cache_key, [], CACHE_TTL_SECONDS)
@@ -131,13 +112,15 @@ def get_correlations(
     for habit in habits:
         done_dates = {
             row[0]
-            for row in db.query(Entry.entry_date).filter(
+            for row in db.query(Entry.entry_date)
+            .filter(
                 Entry.habit_id == habit.id,
                 Entry.entry_date >= start,
-            ).all()
+            )
+            .all()
         }
         matrix[habit.id] = [1 if d in done_dates else 0 for d in all_dates]
-    
+
     corr_matrix = pd.DataFrame(matrix).corr(method="pearson")
 
     result = []
@@ -151,7 +134,9 @@ def get_correlations(
                 "habit_a_name": habit_a.name,
                 "habit_b_id": habit_b.id,
                 "habit_b_name": habit_b.name,
-                "correlation": round(float(corr_value) if pd.notna(corr_value) else 0.0, 2),
+                "correlation": round(
+                    float(corr_value) if pd.notna(corr_value) else 0.0, 2
+                ),
             }
         )
 
@@ -169,10 +154,14 @@ def predict_habit_probability(
     if cached is not None:
         return cached
 
-    habit = db.query(Habit).filter(
-        Habit.id == habit_id,
-        Habit.user_id == user_id,
-    ).first()
+    habit = (
+        db.query(Habit)
+        .filter(
+            Habit.id == habit_id,
+            Habit.user_id == user_id,
+        )
+        .first()
+    )
     if not habit:
         return None
 
@@ -181,10 +170,12 @@ def predict_habit_probability(
 
     done_dates = {
         row[0]
-        for row in db.query(Entry.entry_date).filter(
+        for row in db.query(Entry.entry_date)
+        .filter(
             Entry.habit_id == habit.id,
             Entry.entry_date >= train_start,
-        ).all()
+        )
+        .all()
     }
 
     training_days = [train_start + timedelta(days=i) for i in range(180)]
@@ -223,6 +214,13 @@ def predict_habit_probability(
         current_streak += 1
         check -= timedelta(days=1)
 
-    probability = round(float(model.predict_proba([[today.weekday(), current_streak, history_30_today]])[0][1]), 2)
+    probability = round(
+        float(
+            model.predict_proba([[today.weekday(), current_streak, history_30_today]])[
+                0
+            ][1]
+        ),
+        2,
+    )
     analytics_cache.set(cache_key, probability, CACHE_TTL_SECONDS)
     return probability
