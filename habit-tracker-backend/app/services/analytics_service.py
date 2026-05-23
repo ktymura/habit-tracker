@@ -1,6 +1,7 @@
 from datetime import date, timedelta
 from itertools import combinations
 import pandas as pd
+from sklearn.linear_model import LogisticRegression
 
 from sqlalchemy.orm import Session
 
@@ -36,8 +37,6 @@ def get_summary(
         total_entries = db.query(Entry).filter(
             Entry.habit_id == habit.id
         ).count()
-
-        completion_rate = round(min(total_entries / 30, 1.0), 2)
 
         weekly_entries = db.query(Entry).filter(
             Entry.habit_id == habit.id,
@@ -163,30 +162,67 @@ def get_correlations(
 def predict_habit_probability(
     db: Session,
     user_id: int,
-    habit_id: int
+    habit_id: int,
 ) -> float | None:
     cache_key = f"analytics:user:{user_id}:predict:{habit_id}"
     cached = analytics_cache.get(cache_key)
-
     if cached is not None:
         return cached
 
     habit = db.query(Habit).filter(
         Habit.id == habit_id,
-        Habit.user_id == user_id
+        Habit.user_id == user_id,
     ).first()
-
     if not habit:
         return None
 
-    recent_days = date.today() - timedelta(days=30)
+    today = date.today()
+    train_start = today - timedelta(days=179)
 
-    completed_count = db.query(Entry).filter(
-        Entry.habit_id == habit.id,
-        Entry.entry_date >= recent_days
-    ).count()
+    done_dates = {
+        row[0]
+        for row in db.query(Entry.entry_date).filter(
+            Entry.habit_id == habit.id,
+            Entry.entry_date >= train_start,
+        ).all()
+    }
 
-    probability = round(min(completed_count / 30, 1.0), 2)
+    training_days = [train_start + timedelta(days=i) for i in range(180)]
 
+    X, y = [], []
+    for d in training_days:
+        history_30 = sum(
+            1 for j in range(1, 31) if (d - timedelta(days=j)) in done_dates
+        )
+        streak = 0
+        check = d - timedelta(days=1)
+        while check in done_dates:
+            streak += 1
+            check -= timedelta(days=1)
+        X.append([d.weekday(), streak, history_30])
+        y.append(1 if d in done_dates else 0)
+
+    # fallback gdy za mało danych do treningu obu klas
+    if len(set(y)) < 2:
+        completed_last_30 = sum(
+            1 for j in range(1, 31) if (today - timedelta(days=j)) in done_dates
+        )
+        probability = round(min(completed_last_30 / 30, 1.0), 2)
+        analytics_cache.set(cache_key, probability, CACHE_TTL_SECONDS)
+        return probability
+
+    model = LogisticRegression(max_iter=200)
+    model.fit(X, y)
+
+    history_30_today = sum(
+        1 for j in range(1, 31) if (today - timedelta(days=j)) in done_dates
+    )
+    current_streak = 0
+    check = today - timedelta(days=1)
+    while check in done_dates:
+        current_streak += 1
+        check -= timedelta(days=1)
+
+    probability = round(float(model.predict_proba([[today.weekday(), current_streak, history_30_today]])[0][1]), 2)
     analytics_cache.set(cache_key, probability, CACHE_TTL_SECONDS)
     return probability
