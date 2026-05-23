@@ -1,5 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from datetime import date
+from app.models.entry import Entry
+
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
@@ -21,7 +24,36 @@ router = APIRouter(prefix="/habits", tags=["habits"])
 def get_habits(
     current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ) -> list[HabitResponse]:
-    return get_user_habits(db, current_user.id)
+    habits = get_user_habits(db, current_user.id)
+    today = date.today()
+    completed_today_ids = (
+        {
+            row[0]
+            for row in db.query(Entry.habit_id)
+            .filter(
+                Entry.entry_date == today,
+                Entry.habit_id.in_([h.id for h in habits]),
+            )
+            .all()
+        }
+        if habits
+        else set()
+    )
+    return [
+        HabitResponse.model_validate(
+            {
+                "id": h.id,
+                "user_id": h.user_id,
+                "name": h.name,
+                "color": h.color,
+                "icon": h.icon,
+                "frequency": h.frequency,
+                "created_at": h.created_at,
+                "completed_today": h.id in completed_today_ids,
+            }
+        )
+        for h in habits
+    ]
 
 
 @router.post("", response_model=HabitResponse, status_code=status.HTTP_201_CREATED)
@@ -30,13 +62,25 @@ def create_habit_endpoint(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> HabitResponse:
-    return create_habit(
+    habit = create_habit(
         db,
         current_user.id,
         payload.name,
         payload.color,
         payload.icon,
         payload.frequency,
+    )
+    return HabitResponse.model_validate(
+        {
+            "id": habit.id,
+            "user_id": habit.user_id,
+            "name": habit.name,
+            "color": habit.color,
+            "icon": habit.icon,
+            "frequency": habit.frequency,
+            "created_at": habit.created_at,
+            "completed_today": False,
+        }
     )
 
 
@@ -54,8 +98,26 @@ def update_habit_endpoint(
             status_code=status.HTTP_404_NOT_FOUND, detail="Habit not found"
         )
 
-    return update_habit(
+    habit = update_habit(
         db, habit, payload.name, payload.color, payload.icon, payload.frequency
+    )
+    completed_today = (
+        db.query(Entry)
+        .filter(Entry.habit_id == habit.id, Entry.entry_date == date.today())
+        .first()
+        is not None
+    )
+    return HabitResponse.model_validate(
+        {
+            "id": habit.id,
+            "user_id": habit.user_id,
+            "name": habit.name,
+            "color": habit.color,
+            "icon": habit.icon,
+            "frequency": habit.frequency,
+            "created_at": habit.created_at,
+            "completed_today": completed_today,
+        }
     )
 
 
