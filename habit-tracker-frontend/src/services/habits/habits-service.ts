@@ -64,6 +64,10 @@ export async function updateHabit(
   return normalizeHabit(response.data)
 }
 
+export async function deleteHabit(habitId: string): Promise<void> {
+  await apiClient.delete(`/habits/${habitId}`)
+}
+
 export async function toggleHabitToday(
   habitId: string,
   completed: boolean,

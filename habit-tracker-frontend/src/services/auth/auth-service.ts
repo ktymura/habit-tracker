@@ -8,6 +8,7 @@ import { apiClient } from '../api/client'
 type ApiAuthResponse = {
   access_token?: string
   email?: string
+  refresh_token?: string
   token?: string
   user?: {
     email?: string
@@ -48,6 +49,7 @@ function normalizeAuthResponse(
   }
 
   return {
+    refreshToken: response.refresh_token,
     token,
     userEmail: response.user?.email ?? response.email ?? fallbackEmail,
   }

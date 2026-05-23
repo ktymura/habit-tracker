@@ -2,7 +2,7 @@ import { type FormEvent, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { Button, Card, Input } from '../../components/ui'
-import { setAuthToken } from '../../features/auth/auth-storage'
+import { setAuthTokens } from '../../features/auth/auth-storage'
 import { register } from '../../services/auth/auth-service'
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -47,7 +47,7 @@ export function RegisterPage() {
       setIsSubmitting(true)
       setErrorMessage(null)
       const response = await register({ email, password, confirmPassword })
-      setAuthToken(response.token)
+      setAuthTokens(response.token, response.refreshToken)
       navigate('/habits')
     } catch (error) {
       setErrorMessage(

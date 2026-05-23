@@ -2,7 +2,7 @@ import { type FormEvent, useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 import { Button, Card, Input } from '../../components/ui'
-import { setAuthToken } from '../../features/auth/auth-storage'
+import { setAuthTokens } from '../../features/auth/auth-storage'
 import { login } from '../../services/auth/auth-service'
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -47,7 +47,7 @@ export function LoginPage() {
       setIsSubmitting(true)
       setErrorMessage(null)
       const response = await login({ email, password })
-      setAuthToken(response.token)
+      setAuthTokens(response.token, response.refreshToken)
       navigate(redirectPath)
     } catch (error) {
       setErrorMessage(

@@ -24,8 +24,8 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-[var(--color-border)] bg-[var(--color-surface)]/92 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-        <div>
+      <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-3 px-4 py-3 sm:flex sm:items-center sm:justify-between sm:gap-4 sm:px-6">
+        <div className="min-w-0">
           <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-soft)]">
             Habit Tracker
           </p>
@@ -34,7 +34,7 @@ export function Navbar() {
           </h1>
         </div>
 
-        <nav className="flex flex-wrap items-center justify-end gap-1.5">
+        <nav className="col-span-2 row-start-2 flex flex-wrap items-center gap-1.5 sm:col-auto sm:row-auto sm:justify-end">
           {visibleItems.map((item) => (
             <NavLink
               key={item.to}
@@ -55,6 +55,7 @@ export function Navbar() {
 
         {authenticated ? (
           <Button
+            className="col-start-2 row-start-1 whitespace-nowrap sm:col-auto sm:row-auto"
             variant="secondary"
             onClick={() => {
               clearAuthToken()
