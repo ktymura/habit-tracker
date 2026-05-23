@@ -62,7 +62,7 @@ docker compose up --build
 - Swagger: http://localhost:8000/docs
 - Baza: `localhost:5432` (user `postgres`, hasło `Test123`, db `habit_tracker`)
 
-Seed danych demonstracyjnych (1 user, 6 nawyków, 6 miesięcy historii):
+Seed danych demonstracyjnych - 1 user, 6 nawyków, 6 miesięcy historii (user `demo@example.com`, hasło `Demo!0912#`):
 
 ```bash
 docker compose exec app python seed_demo.py
