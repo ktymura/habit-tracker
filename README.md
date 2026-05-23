@@ -1,28 +1,78 @@
 # Habit Tracker
 
-Aplikacja do śledzenia nawyków — backend API (FastAPI + PostgreSQL).
+Aplikacja webowa do śledzenia codziennych nawyków — rejestrowanie wpisów, statystyki, przypomnienia. Monorepo z backendem (FastAPI + PostgreSQL) i frontendem (React + Vite + Tailwind), hostowane na Railway.
 
-## Uruchomienie (Docker)
+## Demo
+
+Live deploy na Railway:
+
+- **Frontend (production):** https://frontend-production-fe4d.up.railway.app
+- **Backend API (production):** https://backend-production-8b55e.up.railway.app
+- **Swagger / OpenAPI:** https://backend-production-8b55e.up.railway.app/docs
+- **Healthcheck:** https://backend-production-8b55e.up.railway.app/health/db
+
+Środowisko `staging` używane do testów przed mergem do `main` — URLe w [docs/deployment.md](docs/deployment.md).
+
+> 📸 _Screenshoty UI — TODO (sprint-4)._
+
+## Architektura
+
+Klasyczny SPA + REST API + relacyjna baza:
+
+```
+┌─────────────┐   HTTPS    ┌──────────────────┐   SQL    ┌─────────────┐
+│  Browser    │  ───────►  │  Frontend (SPA)  │          │             │
+│  (user)     │            │  React + Vite    │          │             │
+│             │            │  served by serve │          │             │
+└─────────────┘            └────────┬─────────┘          │             │
+                                    │ axios              │ PostgreSQL  │
+                                    │ + JWT (Bearer)     │     15      │
+                                    ▼                    │             │
+                           ┌──────────────────┐  psycopg │             │
+                           │  Backend API     │ ───────► │             │
+                           │  FastAPI         │          │             │
+                           │  + Alembic migr. │          │             │
+                           └──────────────────┘          └─────────────┘
+```
+
+### Stack
+
+| Warstwa | Technologie |
+|---------|-------------|
+| Frontend | React 19, react-router 7, Vite, TypeScript, Tailwind CSS 4, axios, recharts |
+| Backend | FastAPI, SQLAlchemy, Alembic, Pydantic, psycopg, python-jose (JWT) |
+| Baza | PostgreSQL 15 |
+| Testy | pytest (backend), Playwright (E2E), ESLint + Prettier, Ruff |
+| Infra | Docker (BE), Nixpacks (FE), Railway (hosting), GitHub Actions (CI) |
+
+### Kluczowe decyzje
+
+- **Auth:** JWT (access + refresh). Sekrety per środowisko, rotowane oddzielnie dla `production` i `staging`.
+- **Migracje:** Alembic w `habit-tracker-backend/alembic/`. Backend na starcie odpala `alembic upgrade head` (`start.sh`), więc deploy = migracje automatycznie.
+- **Mocki frontowe:** FE domyślnie chodzi na zmockowanym API (`VITE_USE_MOCKS=true`) — dev bez backendu jest możliwy. Na deployu i w E2E `VITE_USE_MOCKS=false` celuje w realny BE.
+- **Moduły backendu:** routery `auth`, `habits`, `entries`, `analytics`, `notifications`, `health` — patrz Swagger.
+
+## Szybki start (Docker, tylko backend + DB)
 
 ```bash
 docker compose up --build
 ```
 
 - API: http://localhost:8000
-- Baza danych: `localhost:5432`
-- Dokumentacja API (Swagger): http://localhost:8000/docs
+- Swagger: http://localhost:8000/docs
+- Baza: `localhost:5432` (user `postgres`, hasło `Test123`, db `habit_tracker`)
 
-### Seed danych demonstracyjnych
+Seed danych demonstracyjnych (1 user, 6 nawyków, 6 miesięcy historii):
 
 ```bash
 docker compose exec app python seed_demo.py
 ```
 
-Tworzy demonstracyjnego użytkownika z 6 nawykami i 6-miesięczną historią.
-Login: demo@example.com
-Hasło: Demo!0912#
+> docker-compose nie odpala frontendu — odpal go osobno (`npm run dev`, sekcja niżej) albo korzystaj ze Swaggera.
 
 ## Uruchomienie lokalne (bez Dockera)
+
+### Backend
 
 ```bash
 cd habit-tracker-backend
@@ -39,44 +89,63 @@ DATABASE_URL=postgresql+psycopg://postgres:Test123@localhost:5432/habit_tracker
 APP_NAME=Habit Tracker API
 APP_VERSION=0.1.0
 DEBUG=True
+JWT_SECRET_KEY=<openssl rand -hex 32>
+JWT_REFRESH_SECRET_KEY=<openssl rand -hex 32>
+JWT_ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+REFRESH_TOKEN_EXPIRE_DAYS=7
+CORS_ALLOWED_ORIGINS=http://localhost:5173
 ```
+
+Postgresa odpal np. przez `docker compose up -d db`, potem:
 
 ```bash
 alembic upgrade head
 uvicorn app.main:app --reload
 ```
 
-## Testy i linting
+### Frontend
 
 ```bash
+cd habit-tracker-frontend
+npm install
+npm run dev
+```
+
+Frontend wstaje na http://localhost:5173. Domyślnie używa mocków (`VITE_USE_MOCKS=true`). Żeby celować w lokalny backend, utwórz `.env` w `habit-tracker-frontend/`:
+
+```
+VITE_API_URL=http://localhost:8000
+VITE_USE_MOCKS=false
+```
+
+## Testy i linting
+
+### Backend
+
+```bash
+cd habit-tracker-backend
 pip install -r requirements-dev.txt
 ruff check .
 ruff format --check .
 pytest -v
 ```
 
-## Strategia branchowania
+### Frontend
 
-| Branch | Przeznaczenie |
-|--------|---------------|
-| `main` | Stabilna wersja — tylko merge z `dev` po zakończeniu sprintu |
-| `dev` | Bieżąca praca — integracja feature branchy |
-| `feature/*` | Nowe funkcjonalności, np. `feature/backend-sprint-2` |
-| `devops/*` | Infrastruktura, CI/CD, np. `devops/github-actions` |
+```bash
+cd habit-tracker-frontend
+npm run lint
+npm run format:check
+```
 
-**Flow:** `feature/*` → PR do `dev` → po zakończeniu sprintu merge `dev` → `main`
+### E2E (Playwright)
 
-## CI/CD
-
-GitHub Actions uruchamia lint + testy przy każdym push na `dev` i `main`.
-
-## Testy E2E (Playwright)
-
-End-to-end testy w `habit-tracker-frontend/e2e/` chodzą przeciwko realnemu backendowi z `VITE_USE_MOCKS=false`. Playwright sam odpala uvicorn (BE :8000) i `vite dev` (FE :5173); Postgres musisz wystartować osobno.
+End-to-end testy w `habit-tracker-frontend/e2e/` chodzą przeciwko realnemu backendowi z `VITE_USE_MOCKS=false`. Playwright sam odpala uvicorn (BE :8000) i `vite dev` (FE :5173); Postgresa musisz wystartować osobno.
 
 **Wymagania:**
 - Postgres z `.env` dostępny (np. `docker compose up -d db`).
-- W `habit-tracker-backend/` venv z zainstalowanym `requirements.txt` — playwright odpala `python -m uvicorn`, więc `python` w PATH musi mieć uvicorn (np. `source habit-tracker-backend/.venv/bin/activate` przed runem).
+- W `habit-tracker-backend/` venv z zainstalowanym `requirements.txt` (Playwright odpala `python -m uvicorn`).
 - W `habit-tracker-frontend/` po pierwszym razie: `npx playwright install chromium`.
 
 **Run:**
@@ -87,107 +156,61 @@ cd habit-tracker-frontend
 npm run test:e2e
 ```
 
-Playwright odpala BE + FE w tle, uruchamia 3 testy (login, toggle habita, dashboard), gasi serwery. Raport HTML po failu: `playwright-report/index.html`.
+Playwright uruchamia BE + FE w tle, wykonuje testy (login, toggle habita, dashboard), gasi serwery. Raport HTML po failu: `playwright-report/index.html`.
 
-Każdy test rejestruje świeżego usera via `POST /auth/register` z unikalnym emailem (`<prefix>-<timestamp>-<random>@example.com`), więc testy są od siebie niezależne i kolejne runy nie wymagają czyszczenia bazy.
+Każdy test rejestruje świeżego usera via `POST /auth/register` z unikalnym emailem, więc testy są od siebie niezależne i kolejne runy nie wymagają czyszczenia bazy.
 
-## Deploy na Railway
+## Strategia branchowania
 
-Projekt habit-tracker stoi na Railway w jednym projekcie z dwoma środowiskami: **`production`** i **`staging`**. Każde środowisko ma własną parę serwisów (backend + frontend) i osobną Postgres bazę (fizyczna izolacja, różne hasła, różne JWT secrets). Konfiguracja per serwis siedzi w `railway.toml` w odpowiednim katalogu. CLI dostępne globalnie po `npm i -g @railway/cli`.
+| Branch | Przeznaczenie |
+|--------|---------------|
+| `main` | Stabilna wersja — tylko merge z `dev` po zakończeniu sprintu |
+| `dev` | Bieżąca praca — integracja feature branchy |
+| `feature/*` | Nowe funkcjonalności, np. `feature/backend-sprint-2` |
+| `devops/*` | Infrastruktura, CI/CD, np. `devops/sprint-3-staging` |
 
-### Środowiska i URLe
+**Flow:** `feature/*` → PR do `dev` → po zakończeniu sprintu merge `dev` → `main`
 
-| | Production | Staging |
-|---|---|---|
-| Backend | https://backend-production-8b55e.up.railway.app | https://backend-staging-61e6.up.railway.app |
-| Frontend | https://frontend-production-fe4d.up.railway.app | https://frontend-staging-150b.up.railway.app |
-| Postgres | env-scoped (osobna instancja) | env-scoped (osobna instancja) |
+## CI/CD
 
-Przełączanie pomiędzy środowiskami w CLI: `railway environment production` lub `railway environment staging`.
+GitHub Actions uruchamia lint + testy przy każdym push na `dev` i `main` (`.github/workflows/ci.yml`).
 
-### Pierwszy setup projektu (od zera)
-
-```bash
-railway login
-railway init                              # utwórz projekt
-railway add --database postgres           # provision Postgres w obecnym env (production)
-railway environment new staging --duplicate production   # drugie środowisko (kopia)
-```
-
-### Deploy backendu
-
-Root: `habit-tracker-backend/`. Build: Dockerfile. Start: `./start.sh` (`alembic upgrade head` + uvicorn na `$PORT`). Healthcheck: `/health/db`.
-
-Zmienne (szablon w `habit-tracker-backend/.env.staging.example`, ustaw przez dashboard albo `railway variables --set`):
-
-| Zmienna | Wartość | Różna per env? |
-|---------|---------|----------------|
-| `DATABASE_URL` | reference: `${{Postgres.DATABASE_URL}}` (Railway resolwuje per env) | tak (różne instancje DB) |
-| `JWT_SECRET_KEY` | `openssl rand -hex 32` | **tak — rotuj per env** |
-| `JWT_REFRESH_SECRET_KEY` | `openssl rand -hex 32` (inna wartość) | **tak — rotuj per env** |
-| `JWT_ALGORITHM` | `HS256` | nie |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | `30` | nie |
-| `REFRESH_TOKEN_EXPIRE_DAYS` | `7` | nie |
-| `CORS_ALLOWED_ORIGINS` | URL FE w danym środowisku | tak |
-| `APP_NAME` | `Habit Tracker API` / `Habit Tracker API (staging)` | tak |
-| `DEBUG` | `False` | nie |
-
-Deploy (z **roota repo**, nie z katalogu backendu — patrz "Gotchas"):
-
-```bash
-railway environment <production|staging>
-railway up habit-tracker-backend --path-as-root --service backend
-```
-
-### Deploy frontendu
-
-Root: `habit-tracker-frontend/`. Build: Nixpacks (`npm run build`). Start: `npm run start` (`serve -s dist -l $PORT`). Healthcheck: `/`.
-
-Zmienne (szablon w `habit-tracker-frontend/.env.staging.example`):
-
-| Zmienna | Wartość |
-|---------|---------|
-| `VITE_API_URL` | URL BE w danym środowisku. **Vite inline'uje ją w bundlu na buildzie — ustaw zanim odpalisz `railway up`.** |
-| `VITE_USE_MOCKS` | `false` (default `true` w FE; bez tego apka zostaje na mockach) |
-
-Deploy:
-
-```bash
-railway environment <production|staging>
-railway up habit-tracker-frontend --path-as-root --service frontend
-```
-
-### Gotchas (wyłapane podczas pierwszego deployu)
-
-- **Monorepo path**: bez `--path-as-root <subdir>` Railway upload'uje cały root repo i Railpack analizuje monorepo (zobaczy `.github/`, `docs/`, `habit-tracker-backend/` — nie wie którego budować). Zawsze `railway up habit-tracker-{backend,frontend} --path-as-root --service <name>` z roota repo.
-- **Node version**: `habit-tracker-frontend/package.json` ma `"engines": {"node": ">=20"}` — wymagane przez react-router 7, vite 8, rolldown. Bez tego Nixpacks daje Node 18 i `npm ci` rzuca `EBADENGINE`.
-- **Nixpacks już robi `npm ci` w osobnym stage**, więc w `railway.toml` `buildCommand = "npm run build"` (samo build). Gdy `buildCommand` ma `npm ci && npm run build`, drugi `npm ci` konfliktuje z `--mount=type=cache,target=/app/node_modules/.cache` przez EBUSY.
-- **Variable change → auto-redeploy**: po `railway variables --set X=...` serwis sam się przebudowuje. Gdy nie chcesz tego (np. seria zmian na raz), dorzuć `--skip-deploys`.
-- **Continuous deploy z gita** nie jest podpięty. Każdy deploy idzie ręcznie przez `railway up`. Można włączyć w dashboardzie: Service Settings → Source → connect repo + watch branch (np. `main` → production, `dev` → staging).
-
-### Po deployu
-
-- Backend healthcheck: `https://<backend-domain>/health/db` → `{"status":"ok","database":"connected"}`
-- Frontend: otwórz w przeglądarce, sprawdź Network że requesty walą na backend (nie na `localhost`)
-- Logi: `railway logs --service <name>` (przełącz env wcześniej przez `railway environment <name>`)
-
+Deploy na Railway idzie **ręcznie** przez `railway up` — pełna instrukcja, lista zmiennych środowiskowych, gotchas: [docs/deployment.md](docs/deployment.md).
 
 ## Struktura projektu
 
 ```
 habit-tracker/
-├─�� .github/workflows/ci.yml
-├── docker-compose.yml
-├── docs/planning/           # Specyfikacje sprintów, stack, ERD
-└── habit-tracker-backend/
-    ├── alembic/             # Migracje bazy danych
-    ├── app/
-    │   ├── core/            # Konfiguracja, połączenie z DB
-    │   ├── models/          # Modele SQLAlchemy
-    │   ├── routers/         # Endpointy API
-    │   ├── schemas/         # Schematy Pydantic
-    │   └── services/        # Logika biznesowa
-    ├── tests/
-    ├── requirements.txt
-    └── requirements-dev.txt
+├── .github/workflows/ci.yml       # GitHub Actions
+├── docker-compose.yml             # BE + Postgres (dev/local)
+├── docs/
+│   ├── deployment.md              # Railway deploy guide
+│   └── planning/                  # Specyfikacje sprintów, stack, ERD
+├── habit-tracker-backend/
+│   ├── alembic/                   # Migracje bazy danych
+│   ├── app/
+│   │   ├── core/                  # Konfiguracja, połączenie z DB, JWT
+│   │   ├── models/                # Modele SQLAlchemy
+│   │   ├── routers/               # auth, habits, entries, analytics, notifications, health
+│   │   ├── schemas/               # Schematy Pydantic
+│   │   └── services/              # Logika biznesowa
+│   ├── tests/                     # pytest
+│   ├── Dockerfile
+│   ├── start.sh                   # alembic upgrade head + uvicorn
+│   └── requirements*.txt
+└── habit-tracker-frontend/
+    ├── src/
+    │   ├── app/                   # Punkt startowy + root component
+    │   ├── components/            # Wspólne komponenty UI
+    │   ├── features/              # Logika domenowa (auth, ...)
+    │   ├── layouts/               # Layouty stron
+    │   ├── lib/                   # Utilsy
+    │   ├── mocks/                 # MSW / dane mockowe
+    │   ├── pages/                 # Ekrany: auth, dashboard, habits
+    │   ├── services/              # Klient API (axios)
+    │   ├── styles/                # Tailwind + globalne
+    │   └── types/                 # Wspólne typy TS
+    ├── e2e/                       # Playwright
+    ├── vite.config.ts
+    └── package.json
 ```
