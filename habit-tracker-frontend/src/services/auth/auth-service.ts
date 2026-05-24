@@ -3,14 +3,12 @@ import type {
   LoginPayload,
   RegisterPayload,
 } from '../../types/auth'
-import { loginMock, registerMock } from '../../mocks/auth-mock'
 import { apiClient } from '../api/client'
-
-const shouldUseMocks = import.meta.env.VITE_USE_MOCKS !== 'false'
 
 type ApiAuthResponse = {
   access_token?: string
   email?: string
+  refresh_token?: string
   token?: string
   user?: {
     email?: string
@@ -51,16 +49,13 @@ function normalizeAuthResponse(
   }
 
   return {
+    refreshToken: response.refresh_token,
     token,
     userEmail: response.user?.email ?? response.email ?? fallbackEmail,
   }
 }
 
 export async function login(payload: LoginPayload): Promise<AuthResponse> {
-  if (shouldUseMocks) {
-    return loginMock(payload)
-  }
-
   try {
     const response = await apiClient.post<ApiAuthResponse>('/auth/login', payload)
     return normalizeAuthResponse(response.data, payload.email)
@@ -74,10 +69,6 @@ export async function login(payload: LoginPayload): Promise<AuthResponse> {
 export async function register(
   payload: RegisterPayload,
 ): Promise<AuthResponse> {
-  if (shouldUseMocks) {
-    return registerMock(payload)
-  }
-
   try {
     const response = await apiClient.post<ApiAuthResponse>('/auth/register', {
       email: payload.email,

@@ -16,9 +16,13 @@
   --color-text-soft: oklch(62% 0.016 235);
   --color-accent: oklch(48% 0.1 160);
   --color-accent-strong: oklch(38% 0.095 160);
+  --color-accent-medium: oklch(62% 0.11 160);
+  --color-accent-light: oklch(75% 0.07 160);
   --color-accent-soft: oklch(93% 0.035 160);
   --color-danger: oklch(51% 0.15 25);
+  --color-danger-hover: oklch(92% 0.04 25);
   --color-danger-soft: oklch(95% 0.028 25);
+  --color-overlay: oklch(22% 0.018 235 / 0.34);
   --shadow-panel: 0 1px 2px oklch(22% 0.018 235 / 0.06);
 }
 

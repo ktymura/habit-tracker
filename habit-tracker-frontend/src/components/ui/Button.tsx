@@ -37,7 +37,7 @@ export function Button({
       type={type}
       disabled={disabled || isLoading}
       className={cn(
-        'inline-flex min-h-10 items-center justify-center rounded-lg border px-3.5 py-2 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-55',
+        'inline-flex min-h-10 cursor-pointer items-center justify-center rounded-lg border px-3.5 py-2 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-55',
         fullWidth && 'w-full',
         variantClasses[variant],
         className,

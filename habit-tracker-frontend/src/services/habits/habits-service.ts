@@ -1,17 +1,9 @@
-import {
-  createHabitMock,
-  listHabitsMock,
-  toggleHabitTodayMock,
-  updateHabitMock,
-} from '../../mocks/habits-mock'
 import type {
   CreateHabitPayload,
   Habit,
   UpdateHabitPayload,
 } from '../../types/habit'
 import { apiClient } from '../api/client'
-
-const shouldUseMocks = import.meta.env.VITE_USE_MOCKS !== 'false'
 
 type ApiHabit = {
   color?: string | null
@@ -45,19 +37,11 @@ function normalizeHabit(habit: ApiHabit): Habit {
 }
 
 export async function listHabits(): Promise<Habit[]> {
-  if (shouldUseMocks) {
-    return listHabitsMock()
-  }
-
   const response = await apiClient.get<ApiHabit[]>('/habits')
   return response.data.map(normalizeHabit)
 }
 
 export async function createHabit(payload: CreateHabitPayload): Promise<Habit> {
-  if (shouldUseMocks) {
-    return createHabitMock(payload)
-  }
-
   const response = await apiClient.post<ApiHabit>('/habits', {
     color: payload.tone,
     frequency: payload.frequency,
@@ -71,10 +55,6 @@ export async function updateHabit(
   habitId: string,
   payload: UpdateHabitPayload,
 ): Promise<Habit> {
-  if (shouldUseMocks) {
-    return updateHabitMock(habitId, payload)
-  }
-
   const response = await apiClient.put<ApiHabit>(`/habits/${habitId}`, {
     color: payload.tone,
     frequency: payload.frequency,
@@ -84,14 +64,14 @@ export async function updateHabit(
   return normalizeHabit(response.data)
 }
 
+export async function deleteHabit(habitId: string): Promise<void> {
+  await apiClient.delete(`/habits/${habitId}`)
+}
+
 export async function toggleHabitToday(
   habitId: string,
   completed: boolean,
 ): Promise<Habit> {
-  if (shouldUseMocks) {
-    return toggleHabitTodayMock(habitId, completed)
-  }
-
   const today = getTodayDate()
 
   if (completed) {
