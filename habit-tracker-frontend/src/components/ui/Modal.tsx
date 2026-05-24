@@ -23,7 +23,7 @@ export function Modal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[oklch(22%_0.018_235_/_0.34)] px-4 py-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-overlay)] px-4 py-8">
       <Card className="w-full max-w-md">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
